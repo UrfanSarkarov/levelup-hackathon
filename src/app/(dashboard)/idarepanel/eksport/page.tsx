@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -16,9 +19,9 @@ import {
   Star,
   Presentation,
   FileText,
+  Loader2,
 } from 'lucide-react';
 
-/* ── Export items ─────────────────────────────────────────── */
 interface ExportItem {
   id: string;
   title: string;
@@ -79,11 +82,49 @@ const EXPORT_ITEMS: ExportItem[] = [
   },
 ];
 
-/* ── Page ─────────────────────────────────────────────────── */
 export default function EksportPage() {
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const handleDownload = async (item: ExportItem) => {
+    setLoadingId(item.id);
+    try {
+      const res = await fetch(item.endpoint);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        alert('Xeta: ' + (data?.error || 'Yuklenme ugursuz oldu'));
+        return;
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('json')) {
+        const data = await res.json();
+        alert('Xeta: ' + (data?.error || 'Yuklenme ugursuz oldu'));
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('content-disposition') || '';
+      const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+      const filename = filenameMatch?.[1] || `${item.title}.xlsx`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Yuklenme zamani xeta bas verdi');
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Melumat Eksportu</h1>
         <p className="text-muted-foreground">
@@ -91,10 +132,10 @@ export default function EksportPage() {
         </p>
       </div>
 
-      {/* Export cards grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {EXPORT_ITEMS.map((item) => {
           const Icon = item.icon;
+          const isLoading = loadingId === item.id;
 
           return (
             <Card key={item.id} className="flex flex-col">
@@ -112,22 +153,25 @@ export default function EksportPage() {
                 </div>
               </CardHeader>
               <CardContent className="mt-auto pt-0">
-                <a href={item.endpoint} download>
-                  <Button
-                    variant="outline"
-                    className="w-full border-[#0D47A1]/20 text-[#0D47A1] hover:bg-[#0D47A1]/5"
-                  >
+                <Button
+                  variant="outline"
+                  className="w-full border-[#0D47A1]/20 text-[#0D47A1] hover:bg-[#0D47A1]/5"
+                  onClick={() => handleDownload(item)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                  ) : (
                     <FileSpreadsheet className="size-4 mr-2" />
-                    Excel-e yukle
-                  </Button>
-                </a>
+                  )}
+                  {isLoading ? 'Yuklenir...' : 'Excel-e yukle'}
+                </Button>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Info card */}
       <Card className="border-[#2EC4B6]/20 bg-[#2EC4B6]/5">
         <CardContent className="flex items-start gap-3 py-4">
           <Download className="size-5 text-[#2EC4B6] mt-0.5" />
