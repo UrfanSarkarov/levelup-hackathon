@@ -2,15 +2,13 @@
 
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Undo2, Loader2 } from 'lucide-react';
 import { updateTeamStatus } from './actions';
 
-export function TeamActions({ teamId, status }: { teamId: string; status: string }) {
+export function TeamActions({ teamId, status, canReview }: { teamId: string; status: string; canReview: boolean }) {
   const [isPending, startTransition] = useTransition();
 
-  if (status !== 'pending') return null;
-
-  function handle(newStatus: 'accepted' | 'rejected') {
+  function handle(newStatus: 'accepted' | 'rejected' | 'pending') {
     startTransition(async () => {
       const result = await updateTeamStatus(teamId, newStatus);
       if (result.error) {
@@ -19,28 +17,55 @@ export function TeamActions({ teamId, status }: { teamId: string; status: string
     });
   }
 
-  return (
-    <div className="flex gap-1">
+  if (isPending) {
+    return <Loader2 className="size-4 animate-spin text-muted-foreground" />;
+  }
+
+  if (status === 'pending') {
+    if (!canReview) {
+      return (
+        <span className="text-xs text-muted-foreground">Qeydiyyat baglanandan sonra</span>
+      );
+    }
+    return (
+      <div className="flex gap-1">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+          onClick={() => handle('accepted')}
+          title="Qebul et"
+        >
+          <Check className="size-3.5" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+          onClick={() => handle('rejected')}
+          title="Redd et"
+        >
+          <X className="size-3.5" />
+        </Button>
+      </div>
+    );
+  }
+
+  // For accepted/rejected - show undo button
+  if (status === 'accepted' || status === 'rejected') {
+    return (
       <Button
         size="sm"
         variant="ghost"
-        className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-        onClick={() => handle('accepted')}
-        disabled={isPending}
-        title="Qebul et"
+        className="h-7 px-2 text-muted-foreground hover:text-foreground"
+        onClick={() => handle('pending')}
+        title="Geri qaytar"
       >
-        {isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+        <Undo2 className="size-3.5 mr-1" />
+        <span className="text-xs">Geri</span>
       </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-        onClick={() => handle('rejected')}
-        disabled={isPending}
-        title="Redd et"
-      >
-        <X className="size-3.5" />
-      </Button>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }

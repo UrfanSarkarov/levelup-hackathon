@@ -19,6 +19,7 @@ import { Users, Search } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 import type { TeamStatus } from '@/types/app.types';
 import { TeamActions } from './team-actions';
+import { BulkRejectButton } from './bulk-reject-button';
 
 /* ── Mock data ────────────────────────────────────────────── */
 interface TeamRow {
@@ -65,18 +66,23 @@ function statusLabel(status: TeamStatus): string {
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function KomandalarPage() {
   let teams: TeamRow[] = [];
+  let canReview = false;
 
   try {
     const supabase = createServiceClient();
 
     const { data: hackathon, error: hErr } = await supabase
       .from('hackathons')
-      .select('id')
+      .select('id, current_phase')
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
     if (hErr || !hackathon) throw new Error('no hackathon');
+
+    // Accept/reject only available after registration is closed
+    const phase = hackathon.current_phase as string;
+    canReview = phase !== 'draft' && phase !== 'registration_open';
 
     const { data: dbTeams, error: tErr } = await supabase
       .from('teams')
@@ -127,9 +133,12 @@ export default async function KomandalarPage() {
             Butun komandalar ve onlarin statuslari
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-[#0D47A1]/10 px-3 py-2 text-sm font-medium text-[#0D47A1]">
-          <Users className="size-4" />
-          <span>{counts.total} komanda</span>
+        <div className="flex items-center gap-3">
+          <BulkRejectButton pendingCount={counts.pending} canReview={canReview} />
+          <div className="flex items-center gap-2 rounded-lg bg-[#0D47A1]/10 px-3 py-2 text-sm font-medium text-[#0D47A1]">
+            <Users className="size-4" />
+            <span>{counts.total} komanda</span>
+          </div>
         </div>
       </div>
 
@@ -211,7 +220,7 @@ export default async function KomandalarPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <TeamActions teamId={team.id} status={team.status} />
+                    <TeamActions teamId={team.id} status={team.status} canReview={canReview} />
                   </TableCell>
                 </TableRow>
               ))
