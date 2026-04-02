@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  XCircle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import type { HackathonPhase } from '@/types/app.types';
@@ -72,6 +73,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 export default async function KomandaDashboardPage() {
   let currentPhase: string = 'registration_open';
   let teamName = 'Sizin Komandaniz';
+  let teamStatus: string = 'pending';
 
   try {
     const supabase = await createClient();
@@ -94,16 +96,18 @@ export default async function KomandaDashboardPage() {
       currentPhase = hackathon.current_phase;
     }
 
-    // Get team name
+    // Get team name and status
     const { data: membership } = await supabase
       .from('team_members')
-      .select('team_id, teams(name)')
+      .select('team_id, teams(name, status)')
       .eq('user_id', user.id)
       .limit(1)
       .single();
 
-    if (membership && typeof membership.teams === 'object' && membership.teams !== null && 'name' in membership.teams) {
-      teamName = (membership.teams as { name: string }).name;
+    if (membership && typeof membership.teams === 'object' && membership.teams !== null) {
+      const team = membership.teams as unknown as { name: string; status: string };
+      teamName = team.name;
+      teamStatus = team.status;
     }
   } catch {
     // Supabase connection failed — show empty state
@@ -185,25 +189,42 @@ export default async function KomandaDashboardPage() {
         </CardContent>
       </Card>
 
+      {/* ── Rejected team banner ─────────────────────────────── */}
+      {teamStatus === 'rejected' && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="flex items-center gap-4 py-6">
+            <XCircle className="size-8 text-red-500 shrink-0" />
+            <div>
+              <p className="font-semibold text-red-700">Komandaniz bu defe secilmedi</p>
+              <p className="text-sm text-red-600">
+                Gelecek tedbirlerde sizi gormek umidi ile! Suallariniz ucun biziml&#601; elaq&#601; saxlayin.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Quick actions ──────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {QUICK_ACTIONS.map((action) => {
-          const Icon = action.icon;
-          return (
-            <Link key={action.title} href={action.href}>
-              <Card className="cursor-pointer transition-shadow hover:shadow-md">
-                <CardHeader>
-                  <div className={`w-fit rounded-lg p-2.5 ${action.bg}`}>
-                    <Icon className={`size-5 ${action.color}`} />
-                  </div>
-                  <CardTitle className="mt-2">{action.title}</CardTitle>
-                  <CardDescription>{action.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
+      {teamStatus !== 'rejected' && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {QUICK_ACTIONS.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link key={action.title} href={action.href}>
+                <Card className="cursor-pointer transition-shadow hover:shadow-md">
+                  <CardHeader>
+                    <div className={`w-fit rounded-lg p-2.5 ${action.bg}`}>
+                      <Icon className={`size-5 ${action.color}`} />
+                    </div>
+                    <CardTitle className="mt-2">{action.title}</CardTitle>
+                    <CardDescription>{action.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
