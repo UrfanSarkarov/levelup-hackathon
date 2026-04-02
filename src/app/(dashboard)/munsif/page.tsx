@@ -14,7 +14,7 @@ import {
   Inbox,
   Star,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 
 interface JudgingRound {
   id: string;
@@ -39,6 +39,7 @@ export default async function MunsifDashboardPage() {
 
   try {
     const supabase = await createClient();
+    const serviceClient = createServiceClient();
 
     const {
       data: { user },
@@ -46,8 +47,8 @@ export default async function MunsifDashboardPage() {
 
     if (!user) throw new Error('no user');
 
-    // Get active round
-    const { data: round } = await supabase
+    // Get active round (use service client to bypass RLS)
+    const { data: round } = await serviceClient
       .from('judging_rounds')
       .select('*')
       .eq('is_active', true)
@@ -63,10 +64,10 @@ export default async function MunsifDashboardPage() {
         is_active: round.is_active,
       };
 
-      // Get assignments for this judge in this round
-      const { data: judgeAssignments } = await supabase
+      // Get assignments for this judge (use service client to bypass RLS)
+      const { data: judgeAssignments } = await serviceClient
         .from('judge_assignments')
-        .select('id, team_id, is_completed, teams(name)')
+        .select('id, team_id, status, teams(name)')
         .eq('round_id', round.id)
         .eq('judge_id', user.id);
 
@@ -77,7 +78,7 @@ export default async function MunsifDashboardPage() {
             typeof a.teams === 'object' && a.teams !== null && 'name' in a.teams
               ? (a.teams as { name: string }).name
               : 'Namelum komanda',
-          is_completed: a.is_completed,
+          is_completed: a.status === 'completed',
           score: null,
         }));
         totalAssigned = assignments.length;

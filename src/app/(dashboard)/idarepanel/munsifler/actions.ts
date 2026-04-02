@@ -152,6 +152,21 @@ export async function createJudgingRound(data: {
     return { error: 'Teyin etme xetasi: ' + assignErr.message };
   }
 
+  // Create default judging criteria for this round
+  const defaultCriteria = [
+    { round_id: newRound.id, name: 'Problemin aydinliqi', description: 'Komanda heqiqi bir problemi duzgun identifikasiya edibmi?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Hellin innovativliyi', description: 'Teklif olunan hell movcud hellerden ne ile ferqlenir?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Texniki icra imkani', description: 'Hellin texniki olaraq heyata kecirilmesi mumkundurmu?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Potensial tesir', description: 'Layihenin potensial tesiri ne qeder boyukdur?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Hedef auditoriya', description: 'Hedef auditoriya duzgun mueyyen olunubmu?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Biznes modeli', description: 'Biznes modeli ve ya davamlilig plani varmi?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Teqdimat keyfiyyeti', description: 'Komandanin teqdimati ne qeder aydin ve inandiricidur?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Prototip ve demo', description: 'Prototip ve ya demo ne qeder funksionaldir?', max_score: 10, weight: 1.0 },
+    { round_id: newRound.id, name: 'Inkisaf potensiali', description: 'Layihenin inkisaf potensiali (scalability) necedir?', max_score: 10, weight: 1.0 },
+  ];
+
+  await supabase.from('judging_criteria').insert(defaultCriteria);
+
   // Notify finalist teams
   try {
     for (const teamId of data.teamIds) {

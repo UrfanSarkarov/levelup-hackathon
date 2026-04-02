@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 
 function getSupabase() {
   return createClient(
@@ -34,7 +35,9 @@ export interface TeamScore {
 }
 
 export interface ScoringData {
+  roundId: string;
   roundName: string;
+  isPublished: boolean;
   judges: JudgeInfo[];
   teams: TeamScore[];
   criteria: { id: string; name: string; maxScore: number }[];
@@ -46,7 +49,7 @@ export async function getScoringResults(): Promise<ScoringData | null> {
   // Get active or latest judging round
   const { data: round } = await supabase
     .from('judging_rounds')
-    .select('id, name')
+    .select('id, name, is_active')
     .order('is_active', { ascending: false })
     .order('round_number', { ascending: false })
     .limit(1)
@@ -54,34 +57,42 @@ export async function getScoringResults(): Promise<ScoringData | null> {
 
   if (!round) return null;
 
-  // Get all judge assignments for this round
+  // Get all judge assignments for this round (using status, not is_completed)
   const { data: assignments } = await supabase
     .from('judge_assignments')
-    .select('judge_id, team_id, is_completed, teams(name, track), profiles!judge_assignments_judge_id_fkey(full_name)')
+    .select('id, judge_id, team_id, status')
     .eq('round_id', round.id);
 
   if (!assignments || assignments.length === 0) return null;
 
-  // Get all scores for this round
-  const { data: scores } = await supabase
-    .from('scores')
-    .select('judge_id, team_id, criterion_id, score')
-    .eq('round_id', round.id);
+  // Get judge profiles
+  const judgeIds = [...new Set(assignments.map(a => a.judge_id))];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', judgeIds);
+  const profileMap = new Map((profiles ?? []).map(p => [p.id, p.full_name ?? 'Namelum']));
 
-  // Try to get scoring criteria from DB
+  // Get team info
+  const teamIds = [...new Set(assignments.map(a => a.team_id))];
+  const { data: teamsData } = await supabase
+    .from('teams')
+    .select('id, name, track')
+    .in('id', teamIds);
+  const teamInfoMap = new Map((teamsData ?? []).map(t => [t.id, { name: t.name, track: t.track ?? '' }]));
+
+  // Get judging criteria for this round
   let criteria: { id: string; name: string; maxScore: number }[] = [];
-  try {
-    const { data: dbCriteria } = await supabase
-      .from('scoring_criteria')
-      .select('id, name, max_score');
-    if (dbCriteria && dbCriteria.length > 0) {
-      criteria = dbCriteria.map((c) => ({ id: c.id, name: c.name, maxScore: c.max_score }));
-    }
-  } catch {
-    // table may not exist
+  const { data: dbCriteria } = await supabase
+    .from('judging_criteria')
+    .select('id, name, max_score')
+    .eq('round_id', round.id)
+    .order('name');
+
+  if (dbCriteria && dbCriteria.length > 0) {
+    criteria = dbCriteria.map(c => ({ id: c.id, name: c.name, maxScore: c.max_score }));
   }
 
-  // Fallback to hardcoded criteria
   if (criteria.length === 0) {
     criteria = [
       { id: 'c1', name: 'Problemin aydinliqi', maxScore: 10 },
@@ -96,38 +107,47 @@ export async function getScoringResults(): Promise<ScoringData | null> {
     ];
   }
 
+  // Get all scores via assignment_id (correct schema)
+  const assignmentIds = assignments.map(a => a.id);
+  const { data: scores } = await supabase
+    .from('scores')
+    .select('assignment_id, criterion_id, score')
+    .in('assignment_id', assignmentIds);
+
+  // Map assignment_id -> { judge_id, team_id }
+  const assignmentMap = new Map(assignments.map(a => [a.id, { judgeId: a.judge_id, teamId: a.team_id }]));
+
   // Build score map: judge_id -> team_id -> criterion_id -> score
   const scoreMap = new Map<string, Map<string, Map<string, number>>>();
-  (scores ?? []).forEach((s) => {
-    if (!scoreMap.has(s.judge_id)) scoreMap.set(s.judge_id, new Map());
-    const judgeMap = scoreMap.get(s.judge_id)!;
-    if (!judgeMap.has(s.team_id)) judgeMap.set(s.team_id, new Map());
-    judgeMap.get(s.team_id)!.set(s.criterion_id, s.score);
+  (scores ?? []).forEach(s => {
+    const info = assignmentMap.get(s.assignment_id);
+    if (!info) return;
+    if (!scoreMap.has(info.judgeId)) scoreMap.set(info.judgeId, new Map());
+    const judgeMap = scoreMap.get(info.judgeId)!;
+    if (!judgeMap.has(info.teamId)) judgeMap.set(info.teamId, new Map());
+    judgeMap.get(info.teamId)!.set(s.criterion_id, Number(s.score));
   });
 
-  // Build judges info
-  const judgeMap = new Map<string, { name: string; completed: number; total: number }>();
+  // Build judges info & team data
+  const judgeAggMap = new Map<string, { name: string; completed: number; total: number }>();
   const teamMap = new Map<string, { name: string; track: string; judges: TeamScore['judges'] }>();
 
   for (const a of assignments) {
-    const rawProfile = a.profiles as unknown;
-    const profile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
-    const judgeName = (profile as { full_name: string } | null)?.full_name ?? 'Namelum';
-    const judgeId = a.judge_id;
+    const judgeName = profileMap.get(a.judge_id) ?? 'Namelum';
+    const isCompleted = a.status === 'completed';
 
     // Track judges
-    if (!judgeMap.has(judgeId)) {
-      judgeMap.set(judgeId, { name: judgeName, completed: 0, total: 0 });
+    if (!judgeAggMap.has(a.judge_id)) {
+      judgeAggMap.set(a.judge_id, { name: judgeName, completed: 0, total: 0 });
     }
-    const j = judgeMap.get(judgeId)!;
+    const j = judgeAggMap.get(a.judge_id)!;
     j.total++;
-    if (a.is_completed) j.completed++;
+    if (isCompleted) j.completed++;
 
     // Track teams
-    const rawTeam = a.teams as unknown;
-    const teamData = Array.isArray(rawTeam) ? rawTeam[0] : rawTeam;
-    const teamName = (teamData as { name: string } | null)?.name ?? 'Namelum';
-    const track = (teamData as { track: string } | null)?.track ?? '';
+    const teamInfo = teamInfoMap.get(a.team_id);
+    const teamName = teamInfo?.name ?? 'Namelum';
+    const track = teamInfo?.track ?? '';
 
     if (!teamMap.has(a.team_id)) {
       teamMap.set(a.team_id, { name: teamName, track, judges: [] });
@@ -136,7 +156,7 @@ export async function getScoringResults(): Promise<ScoringData | null> {
     // Get this judge's scores for this team
     const criteriaScores: Record<string, number> = {};
     let total = 0;
-    const judgeScores = scoreMap.get(judgeId)?.get(a.team_id);
+    const judgeScores = scoreMap.get(a.judge_id)?.get(a.team_id);
     if (judgeScores) {
       for (const c of criteria) {
         const score = judgeScores.get(c.id) ?? 0;
@@ -146,20 +166,20 @@ export async function getScoringResults(): Promise<ScoringData | null> {
     }
 
     teamMap.get(a.team_id)!.judges.push({
-      judgeId,
+      judgeId: a.judge_id,
       judgeName,
       criteriaScores,
       total,
-      isCompleted: a.is_completed ?? false,
+      isCompleted,
     });
   }
 
   // Build final teams list with rankings
   const teams: TeamScore[] = [];
   for (const [teamId, data] of teamMap) {
-    const completedJudges = data.judges.filter((j) => j.isCompleted);
+    const completedJudges = data.judges.filter(j => j.isCompleted);
     const grandTotal = data.judges.reduce((sum, j) => sum + j.total, 0);
-    const avgTotal = completedJudges.length > 0
+    const avgTotal = data.judges.length > 0
       ? grandTotal / data.judges.length
       : 0;
 
@@ -178,17 +198,131 @@ export async function getScoringResults(): Promise<ScoringData | null> {
   // Sort by average total descending
   teams.sort((a, b) => b.averageTotal - a.averageTotal);
 
-  const judges: JudgeInfo[] = Array.from(judgeMap.entries()).map(([id, info]) => ({
+  const judges: JudgeInfo[] = Array.from(judgeAggMap.entries()).map(([id, info]) => ({
     id,
     name: info.name,
     completedCount: info.completed,
     totalCount: info.total,
   }));
 
+  // Check if results are published (stored in round metadata or notifications)
+  // We check if any "results" notification exists for this round
+  let isPublished = false;
+  try {
+    const { data: resultNotif } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('type', 'success')
+      .like('title', '%yer%')
+      .limit(1);
+    isPublished = (resultNotif && resultNotif.length > 0) || false;
+  } catch {
+    // ignore
+  }
+
   return {
+    roundId: round.id,
     roundName: round.name,
+    isPublished,
     judges,
     teams,
     criteria,
   };
+}
+
+// Publish final results - send notifications to teams with their placement
+export async function publishResults(roundId: string) {
+  const supabase = getSupabase();
+
+  // Get scoring data
+  const data = await getScoringResults();
+  if (!data || data.teams.length === 0) {
+    return { error: 'Qiymetlendirme neticeleri tapilmadi' };
+  }
+
+  // Check all judges completed
+  const allDone = data.judges.every(j => j.completedCount === j.totalCount);
+  if (!allDone) {
+    // Allow publishing even if not all complete, but warn
+  }
+
+  // Get hackathon ID
+  const { data: hackathon } = await supabase
+    .from('hackathons')
+    .select('id')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!hackathon) return { error: 'Hackathon tapilmadi' };
+
+  // Send notification to each team with their placement
+  const notifications: {
+    hackathon_id: string;
+    user_id: string;
+    type: string;
+    title: string;
+    body: string;
+    is_read: boolean;
+  }[] = [];
+
+  for (let i = 0; i < data.teams.length; i++) {
+    const team = data.teams[i];
+    const rank = i + 1;
+
+    let title: string;
+    let body: string;
+
+    if (rank === 1) {
+      title = '1-ci yer - Tebriklər!';
+      body = `"${team.teamName}" komandasi Level UP Hackathon-da 1-ci yeri qazandi! Ortalama bal: ${team.averageTotal}. Sizi tebrik edirik!`;
+    } else if (rank === 2) {
+      title = '2-ci yer - Tebriklər!';
+      body = `"${team.teamName}" komandasi Level UP Hackathon-da 2-ci yeri qazandi! Ortalama bal: ${team.averageTotal}. Ela netice!`;
+    } else if (rank === 3) {
+      title = '3-cu yer - Tebriklər!';
+      body = `"${team.teamName}" komandasi Level UP Hackathon-da 3-cu yeri qazandi! Ortalama bal: ${team.averageTotal}. Goz el is!`;
+    } else {
+      title = `${rank}-ci yer`;
+      body = `"${team.teamName}" komandasi Level UP Hackathon-da ${rank}-ci yeri tutdu. Ortalama bal: ${team.averageTotal}. Istirak etdiyiniz ucun tesekku r edirik!`;
+    }
+
+    // Get all team members
+    const { data: members } = await supabase
+      .from('team_members')
+      .select('user_id')
+      .eq('team_id', team.teamId)
+      .not('user_id', 'is', null);
+
+    for (const m of (members ?? [])) {
+      notifications.push({
+        hackathon_id: hackathon.id,
+        user_id: m.user_id,
+        type: rank <= 3 ? 'success' : 'info',
+        title,
+        body,
+        is_read: false,
+      });
+    }
+  }
+
+  // Insert all notifications
+  if (notifications.length > 0) {
+    const { error: nErr } = await supabase.from('notifications').insert(notifications);
+    if (nErr) {
+      return { error: 'Bildirisler gonderilerkən xeta: ' + nErr.message };
+    }
+  }
+
+  // Deactivate round (results published)
+  await supabase
+    .from('judging_rounds')
+    .update({ is_active: false })
+    .eq('id', roundId);
+
+  revalidatePath('/idarepanel/qiymetlendirme');
+  revalidatePath('/komanda');
+  revalidatePath('/komanda/bildirisler');
+
+  return { success: true, teamCount: data.teams.length };
 }

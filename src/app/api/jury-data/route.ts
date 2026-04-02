@@ -31,10 +31,10 @@ export async function GET() {
       return NextResponse.json({ error: 'no_round', teams: [], criteria: [] });
     }
 
-    // Get judge assignments
+    // Get judge assignments (status column, NOT is_completed)
     const { data: assignments } = await supabase
       .from('judge_assignments')
-      .select('id, team_id, is_completed')
+      .select('id, team_id, status')
       .eq('round_id', activeRound.id)
       .eq('judge_id', user.id);
 
@@ -51,19 +51,21 @@ export async function GET() {
 
     const teamMap = new Map((teams ?? []).map(t => [t.id, t]));
 
-    // Get scoring criteria
+    // Get judging criteria for this round
     let criteria: { id: string; name: string; maxScore: number; description: string }[] = [];
-    try {
-      const { data: dbCriteria } = await supabase
-        .from('scoring_criteria')
-        .select('id, name, max_score, description');
-      if (dbCriteria && dbCriteria.length > 0) {
-        criteria = dbCriteria.map(c => ({
-          id: c.id, name: c.name, maxScore: c.max_score, description: c.description || '',
-        }));
-      }
-    } catch { /* table may not exist */ }
+    const { data: dbCriteria } = await supabase
+      .from('judging_criteria')
+      .select('id, name, max_score, description')
+      .eq('round_id', activeRound.id)
+      .order('name');
 
+    if (dbCriteria && dbCriteria.length > 0) {
+      criteria = dbCriteria.map(c => ({
+        id: c.id, name: c.name, maxScore: c.max_score, description: c.description || '',
+      }));
+    }
+
+    // Fallback if no criteria in DB
     if (criteria.length === 0) {
       criteria = [
         { id: 'c1', name: 'Problemin aydinliqi', maxScore: 10, description: 'Komanda heqiqi bir problemi duzgun identifikasiya edibmi?' },
@@ -78,18 +80,23 @@ export async function GET() {
       ];
     }
 
-    // Get existing scores
+    // Get existing scores via assignment_id (correct schema)
+    const assignmentIds = assignments.map(a => a.id);
     const { data: existingScores } = await supabase
       .from('scores')
-      .select('team_id, criterion_id, score')
-      .eq('judge_id', user.id)
-      .eq('round_id', activeRound.id);
+      .select('assignment_id, criterion_id, score')
+      .in('assignment_id', assignmentIds);
+
+    // Build assignment -> team mapping
+    const assignmentTeamMap = new Map(assignments.map(a => [a.id, a.team_id]));
 
     // Build score map: team_id -> criterion_id -> score
     const scoreMap: Record<string, Record<string, number>> = {};
     (existingScores ?? []).forEach(s => {
-      if (!scoreMap[s.team_id]) scoreMap[s.team_id] = {};
-      scoreMap[s.team_id][s.criterion_id] = s.score;
+      const teamId = assignmentTeamMap.get(s.assignment_id);
+      if (!teamId) return;
+      if (!scoreMap[teamId]) scoreMap[teamId] = {};
+      scoreMap[teamId][s.criterion_id] = Number(s.score);
     });
 
     // Build teams response
@@ -97,12 +104,14 @@ export async function GET() {
       const team = teamMap.get(a.team_id);
       const teamScores = scoreMap[a.team_id] ?? {};
       const scoredCount = Object.values(teamScores).filter(v => v > 0).length;
+      const isCompleted = a.status === 'completed';
       return {
         id: a.team_id,
+        assignmentId: a.id,
         name: team?.name ?? 'Namelum',
         track: team?.track ?? '',
-        isCompleted: a.is_completed ?? false,
-        scoredCriteria: a.is_completed ? criteria.length : scoredCount,
+        isCompleted,
+        scoredCriteria: isCompleted ? criteria.length : scoredCount,
         scores: teamScores,
       };
     });
@@ -130,28 +139,45 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceSupabase();
 
-    // Upsert scores
+    // Find the assignment for this judge + team + round
+    const { data: assignment } = await supabase
+      .from('judge_assignments')
+      .select('id')
+      .eq('round_id', roundId)
+      .eq('judge_id', user.id)
+      .eq('team_id', teamId)
+      .single();
+
+    if (!assignment) {
+      return NextResponse.json({ error: 'Teyin tapilmadi' }, { status: 404 });
+    }
+
+    // Upsert scores using (assignment_id, criterion_id) unique constraint
     for (const [criterionId, score] of Object.entries(scores)) {
       await supabase.from('scores').upsert(
         {
-          judge_id: user.id,
-          team_id: teamId,
-          round_id: roundId,
+          assignment_id: assignment.id,
           criterion_id: criterionId,
+          judge_id: user.id,
           score: score as number,
         },
-        { onConflict: 'judge_id,team_id,round_id,criterion_id' }
+        { onConflict: 'assignment_id,criterion_id' }
       );
     }
 
-    // Mark as completed if submitting
+    // Update assignment status
     if (submit) {
       await supabase
         .from('judge_assignments')
-        .update({ is_completed: true })
-        .eq('judge_id', user.id)
-        .eq('team_id', teamId)
-        .eq('round_id', roundId);
+        .update({ status: 'completed' })
+        .eq('id', assignment.id);
+    } else {
+      // Mark as in_progress if not already completed
+      await supabase
+        .from('judge_assignments')
+        .update({ status: 'in_progress' })
+        .eq('id', assignment.id)
+        .eq('status', 'pending');
     }
 
     return NextResponse.json({ success: true });

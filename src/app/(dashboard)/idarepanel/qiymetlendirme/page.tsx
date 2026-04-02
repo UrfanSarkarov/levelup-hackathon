@@ -24,6 +24,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { getScoringResults } from './actions';
+import { PublishResultsButton } from './publish-button';
 
 export default async function QiymetlendirmeNeticePage() {
   const data = await getScoringResults();
@@ -47,6 +48,7 @@ export default async function QiymetlendirmeNeticePage() {
   }
 
   const maxPossible = data.criteria.reduce((sum, c) => sum + c.maxScore, 0);
+  const allJudgesDone = data.judges.every(j => j.completedCount === j.totalCount);
 
   return (
     <div className="space-y-6">
@@ -58,9 +60,16 @@ export default async function QiymetlendirmeNeticePage() {
             {data.roundName} - Juri qiymetlendirmelerinin yekun neticeleri
           </p>
         </div>
-        <Badge variant="outline" className="text-sm">
-          Maks bal: {maxPossible}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-sm">
+            Maks bal: {maxPossible}
+          </Badge>
+          <PublishResultsButton
+            roundId={data.roundId}
+            isPublished={data.isPublished}
+            allJudgesDone={allJudgesDone}
+          />
+        </div>
       </div>
 
       {/* Judges overview */}
@@ -139,7 +148,7 @@ export default async function QiymetlendirmeNeticePage() {
                 data.teams.map((team, idx) => {
                   const rank = idx + 1;
                   return (
-                    <TableRow key={team.teamId}>
+                    <TableRow key={team.teamId} className={rank <= 3 ? 'bg-amber-50/50' : ''}>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           {rank <= 3 ? (
