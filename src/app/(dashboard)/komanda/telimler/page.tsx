@@ -20,7 +20,6 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 interface TrainingSession {
   id: string;
@@ -82,13 +81,16 @@ export default function TelimlerPage() {
     if (!teamId) return;
     setBookingId(id);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.rpc('book_session', {
-        _session_id: id,
-        _team_id: teamId,
+      const res = await fetch('/api/book-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: id, teamId }),
       });
+      const data = await res.json();
 
-      if (!error) {
+      if (data.error) {
+        alert('Xeta: ' + data.error);
+      } else {
         setSessions((prev) =>
           prev.map((s) =>
             s.id === id ? { ...s, isBooked: true, booked: s.booked + 1 } : s

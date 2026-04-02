@@ -87,12 +87,26 @@ export async function getSessions() {
 
   const { data: dbSessions } = await supabase
     .from('sessions')
-    .select('id, title, session_type, session_date, start_time, end_time, location, is_online, capacity, host_id, profiles!sessions_host_id_fkey(full_name)')
+    .select('id, title, session_type, session_date, start_time, end_time, location, is_online, capacity, host_id')
     .eq('hackathon_id', hackathon.id)
     .order('session_date', { ascending: true });
 
   if (!dbSessions) return { sessions: [] };
 
+  // Fetch host profiles separately
+  const hostIds = [...new Set(dbSessions.map(s => s.host_id).filter(Boolean))];
+  const hostMap = new Map<string, string>();
+  if (hostIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', hostIds);
+    (profiles ?? []).forEach((p: { id: string; full_name: string }) => {
+      hostMap.set(p.id, p.full_name);
+    });
+  }
+
+  // Booking counts
   const sessionIds = dbSessions.map(s => s.id);
   const { data: bookings } = await supabase
     .from('session_bookings')
@@ -105,16 +119,16 @@ export async function getSessions() {
     bookingCounts.set(b.session_id, (bookingCounts.get(b.session_id) ?? 0) + 1);
   });
 
-  const sessions = dbSessions.map((s: Record<string, unknown>) => ({
-    id: s.id as string,
-    title: s.title as string,
-    host: ((s.profiles as Record<string, string> | null)?.full_name) ?? '-',
-    date: s.session_date as string,
+  const sessions = dbSessions.map((s) => ({
+    id: s.id,
+    title: s.title,
+    host: s.host_id ? (hostMap.get(s.host_id) ?? '-') : '-',
+    date: s.session_date,
     time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
-    type: s.session_type as string,
-    currentAttendees: bookingCounts.get(s.id as string) ?? 0,
-    maxAttendees: (s.capacity as number) ?? 30,
-    location: s.is_online ? null : (s.location as string | null),
+    type: s.session_type,
+    currentAttendees: bookingCounts.get(s.id) ?? 0,
+    maxAttendees: s.capacity ?? 30,
+    location: s.is_online ? null : s.location,
   }));
 
   return { sessions };

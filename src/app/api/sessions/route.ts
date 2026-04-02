@@ -39,15 +39,28 @@ export async function GET(request: NextRequest) {
       // No auth user
     }
 
-    // Fetch sessions with host profile
+    // Fetch sessions
     const { data: sessions } = await supabase
       .from('sessions')
-      .select('id, title, description, session_type, session_date, start_time, end_time, capacity, is_online, host_id, profiles!sessions_host_id_fkey(full_name, expertise_area)')
+      .select('id, title, description, session_type, session_date, start_time, end_time, capacity, is_online, host_id')
       .eq('session_type', type)
       .order('session_date', { ascending: true });
 
     if (!sessions || sessions.length === 0) {
       return NextResponse.json({ sessions: [], teamId: myTeamId, teamStatus });
+    }
+
+    // Fetch host profiles separately
+    const hostIds = [...new Set(sessions.map(s => s.host_id).filter(Boolean))];
+    const hostMap = new Map<string, { full_name: string; expertise_area: string | null }>();
+    if (hostIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, expertise_area')
+        .in('id', hostIds);
+      (profiles ?? []).forEach((p: { id: string; full_name: string; expertise_area: string | null }) => {
+        hostMap.set(p.id, { full_name: p.full_name, expertise_area: p.expertise_area });
+      });
     }
 
     // Get booking counts
@@ -76,11 +89,7 @@ export async function GET(request: NextRequest) {
     });
 
     const result = sessions.map((s) => {
-      const rawProfile = s.profiles as unknown;
-      const hostProfile = Array.isArray(rawProfile)
-        ? (rawProfile[0] as { full_name: string; expertise_area: string | null } | undefined)
-        : (rawProfile as { full_name: string; expertise_area: string | null } | null);
-
+      const host = s.host_id ? hostMap.get(s.host_id) : null;
       return {
         id: s.id,
         title: s.title,
@@ -90,8 +99,8 @@ export async function GET(request: NextRequest) {
         end_time: s.end_time,
         capacity: s.capacity ?? 30,
         is_online: s.is_online,
-        host_name: hostProfile?.full_name ?? null,
-        expertise_area: hostProfile?.expertise_area ?? null,
+        host_name: host?.full_name ?? null,
+        expertise_area: host?.expertise_area ?? null,
         booked: bookingCounts[s.id] ?? 0,
         isBooked: myBookedIds.includes(s.id),
       };

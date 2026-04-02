@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,10 +12,8 @@ import {
   Calendar,
   Clock,
   Users,
-  Plus,
-  Pencil,
-  Trash2,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -30,153 +25,85 @@ interface Session {
   capacity: number;
   booked: number;
   status: 'active' | 'completed' | 'cancelled';
+  teams: { teamName: string | null }[];
 }
 
 function statusLabel(status: Session['status']): string {
   switch (status) {
-    case 'active':
-      return 'Aktiv';
-    case 'completed':
-      return 'Tamamlandi';
-    case 'cancelled':
-      return 'Legv edildi';
+    case 'active': return 'Aktiv';
+    case 'completed': return 'Tamamlandi';
+    case 'cancelled': return 'Legv edildi';
   }
 }
 
 function statusColor(status: Session['status']): string {
   switch (status) {
-    case 'active':
-      return 'bg-[#6BBF6B] text-white';
-    case 'completed':
-      return 'bg-[#0D47A1] text-white';
-    case 'cancelled':
-      return 'bg-red-500 text-white';
+    case 'active': return 'bg-[#6BBF6B] text-white';
+    case 'completed': return 'bg-[#0D47A1] text-white';
+    case 'cancelled': return 'bg-red-500 text-white';
   }
 }
 
-/* ── Page ────────────────────────────────────────────────── */
 export default function TelminciSessiyalarPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadSessions() {
+    async function load() {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) return;
-
-        const { data: dbSessions } = await supabase
-          .from('sessions')
-          .select('id, title, session_date, start_time, end_time, capacity, status')
-          .eq('host_id', user.id)
-          .eq('session_type', 'training')
-          .order('session_date', { ascending: false });
-
-        if (!dbSessions || dbSessions.length === 0) return;
-
-        // Get booking counts
-        const sessionIds = dbSessions.map((s) => s.id);
-        const { data: bookings } = await supabase
-          .from('session_bookings')
-          .select('session_id')
-          .in('session_id', sessionIds)
-          .eq('status', 'confirmed');
-
-        const bookingCounts: Record<string, number> = {};
-        (bookings ?? []).forEach((b: { session_id: string }) => {
-          bookingCounts[b.session_id] = (bookingCounts[b.session_id] ?? 0) + 1;
-        });
-
-        const mapped: Session[] = dbSessions.map((s) => {
-          const dateObj = new Date(s.session_date + 'T00:00:00');
-          const dateStr = dateObj.toLocaleDateString('az-AZ', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          });
-          // Map DB status to UI status
-          let uiStatus: Session['status'] = 'active';
-          if (s.status === 'completed') uiStatus = 'completed';
-          else if (s.status === 'cancelled') uiStatus = 'cancelled';
-
-          return {
-            id: s.id,
-            title: s.title,
-            date: dateStr,
-            time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
-            capacity: (s.capacity as number) ?? 30,
-            booked: bookingCounts[s.id] ?? 0,
-            status: uiStatus,
-          };
-        });
-
-        setSessions(mapped);
+        const res = await fetch('/api/my-sessions?type=training');
+        const data = await res.json();
+        setSessions(
+          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; capacity: number; booked: number; status: string; teams: { teamName: string | null }[] }) => {
+            const dateObj = new Date(s.session_date + 'T00:00:00');
+            return {
+              id: s.id,
+              title: s.title,
+              date: dateObj.toLocaleDateString('az-AZ', { day: 'numeric', month: 'long', year: 'numeric' }),
+              time: `${s.start_time.slice(0, 5)} - ${s.end_time.slice(0, 5)}`,
+              capacity: s.capacity,
+              booked: s.booked,
+              status: (s.status === 'completed' ? 'completed' : s.status === 'cancelled' ? 'cancelled' : 'active') as Session['status'],
+              teams: s.teams,
+            };
+          })
+        );
       } catch {
-        // Supabase error — sessions remain empty
       } finally {
         setLoading(false);
       }
     }
-
-    loadSessions();
+    load();
   }, []);
 
   const handleCancel = async (id: string) => {
-    // Optimistic UI update
-    setSessions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: 'cancelled' as const } : s))
-    );
-
+    setSessions(prev => prev.map(s => s.id === id ? { ...s, status: 'cancelled' as const } : s));
     try {
       const supabase = createClient();
-      await supabase
-        .from('sessions')
-        .update({ status: 'cancelled' })
-        .eq('id', id);
+      await supabase.from('sessions').update({ status: 'cancelled' }).eq('id', id);
     } catch {
-      // Revert on failure
-      setSessions((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, status: 'active' as const } : s))
-      );
+      setSessions(prev => prev.map(s => s.id === id ? { ...s, status: 'active' as const } : s));
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-[#0D47A1]/10 p-2">
-            <GraduationCap className="size-5 text-[#0D47A1]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Sessiyalarim
-            </h1>
-            <p className="text-muted-foreground">
-              Butun telim sessiyalariniz
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-[#0D47A1]/10 p-2">
+          <GraduationCap className="size-5 text-[#0D47A1]" />
         </div>
-        <Button className="bg-[#0D47A1] text-white hover:bg-[#0D47A1]/90">
-          <Plus className="mr-2 size-4" />
-          Yeni sessiya
-        </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Sessiyalarim</h1>
+          <p className="text-muted-foreground">Size teyin olunmus telim sessiyalari</p>
+        </div>
       </div>
 
-      {/* Sessions list */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : sessions.length === 0 ? (
-        <p className="py-8 text-center text-muted-foreground">
-          Hec bir sessiya tapilmadi
-        </p>
+        <p className="py-8 text-center text-muted-foreground">Hec bir sessiya tapilmadi</p>
       ) : (
         <div className="space-y-4">
           {sessions.map((session) => (
@@ -202,6 +129,11 @@ export default function TelminciSessiyalarPage() {
                         {session.booked} / {session.capacity} yer
                       </span>
                     </div>
+                    {session.teams.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Qeydiyyat: {session.teams.map(t => t.teamName).filter(Boolean).join(', ')}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -209,21 +141,15 @@ export default function TelminciSessiyalarPage() {
                     {statusLabel(session.status)}
                   </Badge>
                   {session.status === 'active' && (
-                    <>
-                      <Button variant="outline" size="sm">
-                        <Pencil className="mr-1 size-3.5" />
-                        Redakte et
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                        onClick={() => handleCancel(session.id)}
-                      >
-                        <Trash2 className="mr-1 size-3.5" />
-                        Legv et
-                      </Button>
-                    </>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => handleCancel(session.id)}
+                    >
+                      <Trash2 className="mr-1 size-3.5" />
+                      Legv et
+                    </Button>
                   )}
                 </div>
               </CardContent>

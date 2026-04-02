@@ -4,24 +4,20 @@ import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   UserCheck,
   Calendar,
   Clock,
   Timer,
   Users,
-  Plus,
+  Loader2,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 interface MentorSlot {
   id: string;
+  title: string;
   date: string;
   time: string;
   duration: string;
@@ -31,203 +27,126 @@ interface MentorSlot {
 
 function statusLabel(status: MentorSlot['status']): string {
   switch (status) {
-    case 'available':
-      return 'Movcuddur';
-    case 'booked':
-      return 'Bron edilib';
-    case 'completed':
-      return 'Tamamlandi';
+    case 'available': return 'Movcuddur';
+    case 'booked': return 'Bron edilib';
+    case 'completed': return 'Tamamlandi';
   }
 }
 
 function statusColor(status: MentorSlot['status']): string {
   switch (status) {
-    case 'available':
-      return 'bg-[#6BBF6B]/10 text-[#6BBF6B]';
-    case 'booked':
-      return 'bg-[#2EC4B6] text-white';
-    case 'completed':
-      return 'bg-[#0D47A1] text-white';
+    case 'available': return 'bg-[#6BBF6B]/10 text-[#6BBF6B]';
+    case 'booked': return 'bg-[#2EC4B6] text-white';
+    case 'completed': return 'bg-[#0D47A1] text-white';
   }
 }
 
-/* ── Page ────────────────────────────────────────────────── */
 export default function MentorSlotlarPage() {
   const [slots, setSlots] = useState<MentorSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadSlots() {
+    async function load() {
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('No user');
+        const res = await fetch('/api/my-sessions?type=mentoring');
+        const data = await res.json();
 
-        const { data: sessions, error } = await supabase
-          .from('sessions')
-          .select('*')
-          .eq('host_id', user.id)
-          .eq('session_type', 'mentoring')
-          .order('session_date', { ascending: true });
+        setSlots(
+          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; booked: number; teams: { teamName: string | null }[] }) => {
+            const dateObj = new Date(s.session_date + 'T00:00:00');
+            const dateStr = dateObj.toLocaleDateString('az-AZ', { day: 'numeric', month: 'long', year: 'numeric' });
+            const startTime = s.start_time.slice(0, 5);
+            const endTime = s.end_time.slice(0, 5);
+            const [sh, sm] = startTime.split(':').map(Number);
+            const [eh, em] = endTime.split(':').map(Number);
+            const durationMin = (eh * 60 + em) - (sh * 60 + sm);
 
-        if (error) throw error;
-        if (!sessions) {
-          setSlots([]);
-          return;
-        }
+            const isBooked = s.booked > 0;
+            const isPast = dateObj < new Date();
+            let status: MentorSlot['status'] = 'available';
+            if (isBooked && isPast) status = 'completed';
+            else if (isBooked) status = 'booked';
 
-        const mappedSlots: MentorSlot[] = [];
-
-        for (const session of sessions) {
-          const startTime = session.start_time?.slice(0, 5) || '00:00';
-          const endTime = session.end_time?.slice(0, 5) || '00:00';
-          const dateObj = new Date(session.session_date);
-          const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
-            'Iyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
-          const dateStr = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
-
-          // Calculate duration in minutes from start_time / end_time
-          const [sh, sm] = startTime.split(':').map(Number);
-          const [eh, em] = endTime.split(':').map(Number);
-          const durationMin = (eh * 60 + em) - (sh * 60 + sm);
-          const durationStr = `${durationMin > 0 ? durationMin : 60} deqiqe`;
-
-          // Get bookings for this session
-          const { data: bookings } = await supabase
-            .from('session_bookings')
-            .select('id, user_id')
-            .eq('session_id', session.id);
-
-          let teamName: string | null = null;
-          const isBooked = bookings && bookings.length > 0;
-
-          if (isBooked) {
-            const { data: teamMember } = await supabase
-              .from('team_members')
-              .select('team_id')
-              .eq('user_id', bookings[0].user_id)
-              .limit(1)
-              .maybeSingle();
-
-            if (teamMember?.team_id) {
-              const { data: team } = await supabase
-                .from('teams')
-                .select('name')
-                .eq('id', teamMember.team_id)
-                .maybeSingle();
-              teamName = team?.name || null;
-            }
-          }
-
-          // Determine status
-          const now = new Date();
-          const sessionDate = new Date(session.session_date);
-          let status: MentorSlot['status'] = 'available';
-          if (isBooked && sessionDate < now) {
-            status = 'completed';
-          } else if (isBooked) {
-            status = 'booked';
-          }
-
-          mappedSlots.push({
-            id: session.id,
-            date: dateStr,
-            time: `${startTime} - ${endTime}`,
-            duration: durationStr,
-            teamName,
-            status,
-          });
-        }
-
-        setSlots(mappedSlots);
+            return {
+              id: s.id,
+              title: s.title,
+              date: dateStr,
+              time: `${startTime} - ${endTime}`,
+              duration: `${durationMin > 0 ? durationMin : 60} deqiqe`,
+              teamName: s.teams?.[0]?.teamName ?? null,
+              status,
+            };
+          })
+        );
       } catch {
-        // Supabase error — slots remain empty
       } finally {
         setLoading(false);
       }
     }
-    loadSlots();
+    load();
   }, []);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-muted-foreground">Yuklenilir...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-[#6BBF6B]/10 p-2">
-            <UserCheck className="size-5 text-[#6BBF6B]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Mentorluq Slotlari
-            </h1>
-            <p className="text-muted-foreground">
-              Butun mentorluq slotlariniz
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-[#6BBF6B]/10 p-2">
+          <UserCheck className="size-5 text-[#6BBF6B]" />
         </div>
-        <Button className="bg-[#0D47A1] text-white hover:bg-[#0D47A1]/90">
-          <Plus className="mr-2 size-4" />
-          Yeni slot yarat
-        </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Mentorluq Slotlari</h1>
+          <p className="text-muted-foreground">Size teyin olunmus mentorluq sessiyalari</p>
+        </div>
       </div>
 
-      {/* Slots list */}
-      <div className="space-y-4">
-        {slots.length === 0 && (
-          <p className="py-8 text-center text-muted-foreground">
-            Mentorluq slotu tapilmadi
-          </p>
-        )}
-        {slots.map((slot) => (
-          <Card key={slot.id}>
-            <CardContent className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-4">
-                <div className="flex size-12 items-center justify-center rounded-lg bg-[#0D47A1]/10">
-                  <Calendar className="size-5 text-[#0D47A1]" />
-                </div>
-                <div>
-                  <div className="flex flex-wrap items-center gap-3 text-sm">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Calendar className="size-3.5" />
-                      {slot.date}
-                    </span>
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="size-3.5" />
-                      {slot.time}
-                    </span>
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Timer className="size-3.5" />
-                      {slot.duration}
-                    </span>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : slots.length === 0 ? (
+        <p className="py-8 text-center text-muted-foreground">Mentorluq slotu tapilmadi</p>
+      ) : (
+        <div className="space-y-4">
+          {slots.map((slot) => (
+            <Card key={slot.id}>
+              <CardContent className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex size-12 items-center justify-center rounded-lg bg-[#0D47A1]/10">
+                    <Calendar className="size-5 text-[#0D47A1]" />
                   </div>
-                  {slot.teamName ? (
-                    <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                      <Users className="size-3.5" />
-                      Komanda: <span className="font-medium">{slot.teamName}</span>
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Bron olunmayib
-                    </p>
-                  )}
+                  <div>
+                    <p className="font-semibold">{slot.title}</p>
+                    <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="size-3.5" />
+                        {slot.date}
+                      </span>
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="size-3.5" />
+                        {slot.time}
+                      </span>
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Timer className="size-3.5" />
+                        {slot.duration}
+                      </span>
+                    </div>
+                    {slot.teamName ? (
+                      <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                        <Users className="size-3.5" />
+                        Komanda: <span className="font-medium">{slot.teamName}</span>
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted-foreground">Bron olunmayib</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <Badge className={statusColor(slot.status)}>
-                {statusLabel(slot.status)}
-              </Badge>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <Badge className={statusColor(slot.status)}>
+                  {statusLabel(slot.status)}
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
