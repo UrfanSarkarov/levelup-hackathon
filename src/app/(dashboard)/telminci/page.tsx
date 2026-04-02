@@ -17,12 +17,11 @@ import {
   Clock,
   Calendar,
   Plus,
-  AlertTriangle,
   Loader2,
+  Inbox,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface TrainerSession {
   id: string;
   title: string;
@@ -32,34 +31,14 @@ interface TrainerSession {
   capacity: number;
 }
 
-const MOCK_SESSIONS: TrainerSession[] = [
-  {
-    id: '1',
-    title: 'React Advanced Patterns',
-    date: '5 Aprel 2026',
-    time: '10:00 - 12:00',
-    bookedCount: 22,
-    capacity: 30,
-  },
-  {
-    id: '2',
-    title: 'TypeScript Best Practices',
-    date: '10 Aprel 2026',
-    time: '14:00 - 16:00',
-    bookedCount: 15,
-    capacity: 25,
-  },
-];
-
 /* ── Page ────────────────────────────────────────────────── */
 export default function TelminciPaneliPage() {
-  const [sessions, setSessions] = useState<TrainerSession[]>(MOCK_SESSIONS);
-  const [useMock, setUseMock] = useState(true);
+  const [sessions, setSessions] = useState<TrainerSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [kpiData, setKpiData] = useState({
-    activeSessions: '2',
-    totalBookings: '37',
-    nextSession: '5 Aprel',
+    activeSessions: '0',
+    totalBookings: '0',
+    nextSession: '-',
   });
 
   useEffect(() => {
@@ -80,7 +59,10 @@ export default function TelminciPaneliPage() {
           .eq('session_type', 'training')
           .order('session_date', { ascending: true });
 
-        if (!dbSessions || dbSessions.length === 0) return;
+        if (!dbSessions || dbSessions.length === 0) {
+          setLoading(false);
+          return;
+        }
 
         // Get booking counts
         const sessionIds = dbSessions.map((s) => s.id);
@@ -136,9 +118,8 @@ export default function TelminciPaneliPage() {
           nextSession: nextDate,
         });
         setSessions(mapped);
-        setUseMock(false);
       } catch {
-        // Keep mock data as fallback
+        // Supabase connection failed — show empty state
       } finally {
         setLoading(false);
       }
@@ -189,16 +170,6 @@ export default function TelminciPaneliPage() {
         </div>
       </div>
 
-      {/* Mock-data banner */}
-      {useMock && !loading && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
-
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -238,6 +209,13 @@ export default function TelminciPaneliPage() {
               </Button>
             </CardHeader>
             <CardContent>
+              {sessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <Inbox className="mb-3 size-12" />
+                  <p className="font-medium">Hələ heç bir sessiya yoxdur</p>
+                  <p className="mt-1 text-xs">Yeni sessiya yaratmaq ucun yuxaridaki duymeye basin</p>
+                </div>
+              ) : (
               <div className="space-y-4">
                 {sessions.map((session) => (
                   <div
@@ -272,6 +250,7 @@ export default function TelminciPaneliPage() {
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         </>

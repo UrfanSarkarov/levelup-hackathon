@@ -129,8 +129,29 @@ function GreenTechIcon({ className }: { className?: string }) {
 
 /* ───────── Countdown Timer ───────── */
 function CountdownTimer() {
-  const targetDate = new Date("2026-04-25T23:59:59").getTime();
+  const [targetDate, setTargetDate] = useState<number>(new Date("2026-04-25T23:59:59").getTime());
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    // Fetch deadline from Supabase
+    import('@supabase/supabase-js').then(({ createClient }) => {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      supabase
+        .from('hackathons')
+        .select('registration_end')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+        .then(({ data }) => {
+          if (data?.registration_end) {
+            setTargetDate(new Date(data.registration_end).getTime());
+          }
+        });
+    });
+  }, []);
 
   useEffect(() => {
     const update = () => {

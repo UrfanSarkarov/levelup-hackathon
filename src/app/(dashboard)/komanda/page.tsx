@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   Circle,
   Clock,
-  AlertTriangle,
   Inbox,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
@@ -51,7 +50,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: GraduationCap,
     color: 'text-[#0D47A1]',
     bg: 'bg-[#0D47A1]/10',
-    href: '#',
+    href: '/komanda/telimler',
   },
   {
     title: 'Mentor bron et',
@@ -59,7 +58,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: UserCheck,
     color: 'text-[#2EC4B6]',
     bg: 'bg-[#2EC4B6]/10',
-    href: '#',
+    href: '/komanda/mentorluq',
   },
   {
     title: 'Teqdimat gonder',
@@ -67,7 +66,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: Send,
     color: 'text-[#6BBF6B]',
     bg: 'bg-[#6BBF6B]/10',
-    href: '#',
+    href: '/komanda/teqdimat',
   },
   {
     title: 'Bildirisler',
@@ -75,12 +74,12 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: Bell,
     color: 'text-amber-600',
     bg: 'bg-amber-100',
-    href: '#',
+    href: '/komanda/bildirisler',
   },
 ];
 
-/* ── Mock notifications ───────────────────────────────────── */
-interface MockNotification {
+/* ── Notification type ────────────────────────────────────── */
+interface Notification {
   id: string;
   title: string;
   message: string;
@@ -89,31 +88,11 @@ interface MockNotification {
   is_read: boolean;
 }
 
-const MOCK_NOTIFICATIONS: MockNotification[] = [
-  {
-    id: '1',
-    title: 'Qeydiyyat tesdiq edildi',
-    message: 'Komandaniz hackathon-a qebul edildi.',
-    type: 'success',
-    created_at: '2026-03-30T10:00:00Z',
-    is_read: false,
-  },
-  {
-    id: '2',
-    title: 'Yeni telim sessiyasi',
-    message: 'React Advanced telimi 5 aprel tarixinde baslanir.',
-    type: 'info',
-    created_at: '2026-03-31T14:30:00Z',
-    is_read: true,
-  },
-];
-
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function KomandaDashboardPage() {
-  let useMock = false;
   let currentPhase: string = 'registration_open';
   let teamName = 'Sizin Komandaniz';
-  let notifications: MockNotification[] = MOCK_NOTIFICATIONS;
+  let notifications: Notification[] = [];
 
   try {
     const supabase = await createClient();
@@ -161,13 +140,13 @@ export default async function KomandaDashboardPage() {
         id: n.id,
         title: n.title,
         message: n.body ?? '',
-        type: n.type as MockNotification['type'],
+        type: n.type as Notification['type'],
         created_at: n.created_at,
         is_read: n.is_read,
       }));
     }
   } catch {
-    useMock = true;
+    // Supabase connection failed — show empty state
   }
 
   /* ── Phase stepper index ──────────────────────────────────── */
@@ -183,16 +162,6 @@ export default async function KomandaDashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight">Komanda Paneli</h1>
         <p className="text-muted-foreground">{teamName}</p>
       </div>
-
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
 
       {/* ── Status stepper ─────────────────────────────────────── */}
       <Card>

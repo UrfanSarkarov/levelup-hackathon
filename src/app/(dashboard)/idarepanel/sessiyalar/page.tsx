@@ -122,8 +122,7 @@ export default function SessiyalarPage() {
       })));
       setUseMock(false);
     } catch {
-      setUseMock(true);
-      setSessions(MOCK_SESSIONS);
+      setSessions([]);
     } finally {
       setLoading(false);
     }
@@ -247,16 +246,6 @@ export default function SessiyalarPage() {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

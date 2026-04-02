@@ -11,41 +11,29 @@ import {
   Users,
   BarChart3,
   ClipboardCheck,
-  AlertTriangle,
   Inbox,
   Star,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 
-/* ── Mock data ────────────────────────────────────────────── */
-interface MockRound {
+interface JudgingRound {
   id: string;
   name: string;
   round_number: number;
   is_active: boolean;
 }
 
-interface MockAssignment {
+interface Assignment {
   id: string;
   team_name: string;
   is_completed: boolean;
   score: number | null;
 }
 
-const MOCK_ROUND: MockRound = {
-  id: '1',
-  name: 'Yari-final turu',
-  round_number: 1,
-  is_active: true,
-};
-
-const MOCK_ASSIGNMENTS: MockAssignment[] = [];
-
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function MunsifDashboardPage() {
-  let useMock = false;
-  let activeRound: MockRound | null = MOCK_ROUND;
-  let assignments: MockAssignment[] = MOCK_ASSIGNMENTS;
+  let activeRound: JudgingRound | null = null;
+  let assignments: Assignment[] = [];
   let totalAssigned = 0;
   let totalCompleted = 0;
 
@@ -97,7 +85,7 @@ export default async function MunsifDashboardPage() {
       }
     }
   } catch {
-    useMock = true;
+    // Supabase connection failed — show empty state
   }
 
   /* ── KPI cards ──────────────────────────────────────────── */
@@ -141,16 +129,6 @@ export default async function MunsifDashboardPage() {
           </p>
         </div>
       </div>
-
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
 
       {/* KPI row */}
       <div className="grid gap-4 sm:grid-cols-3">

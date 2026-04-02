@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   Clock,
   Circle,
-  ChevronRight,
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
@@ -92,17 +91,17 @@ export default function FazalarPage() {
   }, []);
 
   const currentIdx = PHASE_ORDER.indexOf(currentPhase);
-  const nextPhase = currentIdx < PHASE_ORDER.length - 1 ? PHASE_ORDER[currentIdx + 1] : null;
+  const [selectedPhase, setSelectedPhase] = useState<HackathonPhase | ''>('');
 
-  function handleAdvance() {
-    if (!nextPhase) return;
+  function handlePhaseChange() {
+    if (!selectedPhase || selectedPhase === currentPhase) return;
 
     startTransition(async () => {
       if (hackathonId) {
         const supabase = createClient();
         const { error } = await supabase
           .from('hackathons')
-          .update({ current_phase: nextPhase })
+          .update({ current_phase: selectedPhase })
           .eq('id', hackathonId);
 
         if (error) {
@@ -111,7 +110,8 @@ export default function FazalarPage() {
           return;
         }
       }
-      setCurrentPhase(nextPhase);
+      setCurrentPhase(selectedPhase);
+      setSelectedPhase('');
       setConfirmOpen(false);
     });
   }
@@ -246,56 +246,61 @@ export default function FazalarPage() {
         </CardContent>
       </Card>
 
-      {/* Advance to next phase */}
-      {nextPhase && (
-        <Card>
-          <CardContent className="flex items-center justify-between py-6">
-            <div>
-              <h3 className="font-semibold">Novbeti faza</h3>
-              <p className="text-sm text-muted-foreground">
-                {PHASE_LABELS[currentPhase]} fazasindan{' '}
-                <span className="font-medium text-[#0D47A1]">
-                  {PHASE_LABELS[nextPhase]}
-                </span>{' '}
-                fazasina kecid edin
-              </p>
-            </div>
+      {/* Change phase */}
+      <Card>
+        <CardContent className="flex items-center justify-between py-6">
+          <div className="flex-1">
+            <h3 className="font-semibold">Faza dəyişdir</h3>
+            <p className="text-sm text-muted-foreground">
+              İstənilən fazaya keçid edin
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+              value={selectedPhase}
+              onChange={(e) => setSelectedPhase(e.target.value as HackathonPhase)}
+            >
+              <option value="">Faza seçin...</option>
+              {PHASE_ORDER.filter((p) => p !== currentPhase).map((p) => (
+                <option key={p} value={p}>{PHASE_LABELS[p]}</option>
+              ))}
+            </select>
             <Button
               className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 text-white"
               onClick={() => setConfirmOpen(true)}
+              disabled={!selectedPhase}
             >
-              Novbeti fazaya kec
-              <ChevronRight className="size-4 ml-1" />
+              Fazanı dəyişdir
             </Button>
-            <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Faza kecidini tesdiq edin</DialogTitle>
-                  <DialogDescription>
-                    Bu emeliyyat hackathon-u{' '}
-                    <strong>{PHASE_LABELS[currentPhase]}</strong> fazasindan{' '}
-                    <strong>{PHASE_LABELS[nextPhase]}</strong> fazasina kecirecek.
-                    Bu emeliyyati geri qaytarmaq mumkun olmaya biler.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-                    Legv et
-                  </Button>
-                  <Button
-                    className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 text-white"
-                    onClick={handleAdvance}
-                    disabled={isPending}
-                  >
-                    {isPending && <Loader2 className="size-4 mr-1 animate-spin" />}
-                    Tesdiq et
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Faza dəyişikliyini təsdiq edin</DialogTitle>
+                <DialogDescription>
+                  Bu əməliyyat hackathon-u{' '}
+                  <strong>{PHASE_LABELS[currentPhase]}</strong> fazasından{' '}
+                  <strong>{selectedPhase ? PHASE_LABELS[selectedPhase] : ''}</strong> fazasına keçirəcək.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                  Ləğv et
+                </Button>
+                <Button
+                  className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 text-white"
+                  onClick={handlePhaseChange}
+                  disabled={isPending}
+                >
+                  {isPending && <Loader2 className="size-4 mr-1 animate-spin" />}
+                  Təsdiq et
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }

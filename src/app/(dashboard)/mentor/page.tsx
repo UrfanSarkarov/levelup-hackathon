@@ -17,11 +17,9 @@ import {
   Clock,
   Calendar,
   Plus,
-  AlertTriangle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface MentorSlot {
   id: string;
   date: string;
@@ -30,64 +28,14 @@ interface MentorSlot {
   status: 'available' | 'booked';
 }
 
-const MOCK_SLOTS: MentorSlot[] = [
-  {
-    id: '1',
-    date: '6 Aprel 2026',
-    time: '10:00 - 11:00',
-    teamName: 'CodeCrafters',
-    status: 'booked',
-  },
-  {
-    id: '2',
-    date: '8 Aprel 2026',
-    time: '14:00 - 15:00',
-    teamName: null,
-    status: 'available',
-  },
-  {
-    id: '3',
-    date: '10 Aprel 2026',
-    time: '16:00 - 17:00',
-    teamName: 'InnoVision',
-    status: 'booked',
-  },
-];
-
-/* ── KPI cards ───────────────────────────────────────────── */
-const KPI_CARDS = [
-  {
-    label: 'Aktiv slotlar',
-    value: '3',
-    icon: CalendarCheck,
-    color: 'text-[#0D47A1]',
-    bg: 'bg-[#0D47A1]/10',
-  },
-  {
-    label: 'Umumi gorusler',
-    value: '12',
-    icon: Users,
-    color: 'text-[#2EC4B6]',
-    bg: 'bg-[#2EC4B6]/10',
-  },
-  {
-    label: 'Gelen gorus',
-    value: '6 Aprel',
-    icon: Clock,
-    color: 'text-[#6BBF6B]',
-    bg: 'bg-[#6BBF6B]/10',
-  },
-];
-
 /* ── Page ────────────────────────────────────────────────── */
 export default function MentorPaneliPage() {
-  const [slots, setSlots] = useState<MentorSlot[]>(MOCK_SLOTS);
-  const [useMock, setUseMock] = useState(true);
+  const [slots, setSlots] = useState<MentorSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [kpiData, setKpiData] = useState({
-    activeSlots: '3',
-    totalMeetings: '12',
-    nextMeeting: '6 Aprel',
+    activeSlots: '0',
+    totalMeetings: '0',
+    nextMeeting: '-',
   });
 
   useEffect(() => {
@@ -109,7 +57,6 @@ export default function MentorPaneliPage() {
         if (!sessions || sessions.length === 0) {
           setSlots([]);
           setKpiData({ activeSlots: '0', totalMeetings: '0', nextMeeting: '-' });
-          setUseMock(false);
           return;
         }
 
@@ -183,9 +130,8 @@ export default function MentorPaneliPage() {
           nextMeeting: nextMeetingStr,
         });
         setSlots(mappedSlots);
-        setUseMock(false);
       } catch {
-        // Keep mock data on error
+        // Supabase connection failed — show empty state
       } finally {
         setLoading(false);
       }
@@ -227,14 +173,6 @@ export default function MentorPaneliPage() {
 
   return (
     <div className="space-y-6">
-      {/* Mock-data warning */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>Supabase-a qosula bilmedi. Mock data gosterilir.</span>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="rounded-lg bg-[#0D47A1]/10 p-2">
