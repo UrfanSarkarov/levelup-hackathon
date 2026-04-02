@@ -88,7 +88,7 @@ export default function EksportPage() {
   const handleDownload = async (item: ExportItem) => {
     setLoadingId(item.id);
     try {
-      const res = await fetch(item.endpoint);
+      const res = await fetch(item.endpoint, { credentials: 'include' });
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);

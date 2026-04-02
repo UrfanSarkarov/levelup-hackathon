@@ -29,18 +29,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Fayl olcusu 10MB-dan boyuk ola bilmez' }, { status: 400 });
     }
 
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/zip',
-      'application/x-zip-compressed',
-    ];
+    const allowedExtensions = ['.pdf', '.pptx', '.zip'];
+    const fileName = file.name.toLowerCase();
+    const hasValidExt = allowedExtensions.some(ext => fileName.endsWith(ext));
 
-    if (!allowedTypes.includes(file.type)) {
+    if (!hasValidExt) {
       return NextResponse.json({ error: 'Yalniz PDF, PPTX ve ZIP faylları yuklenə biler' }, { status: 400 });
     }
 
     const supabase = getServiceSupabase();
+
+    // Ensure bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(b => b.name === 'submissions');
+    if (!bucketExists) {
+      await supabase.storage.createBucket('submissions', {
+        public: false,
+        fileSizeLimit: MAX_FILE_SIZE,
+      });
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const filePath = `${teamId}/${file.name}`;
@@ -48,11 +55,12 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.storage
       .from('submissions')
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType: file.type || 'application/octet-stream',
         upsert: true,
       });
 
     if (error) {
+      console.error('Storage upload error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -61,7 +69,8 @@ export async function POST(request: NextRequest) {
       fileName: file.name,
       fileSize: file.size,
     });
-  } catch {
-    return NextResponse.json({ error: 'Server xetasi' }, { status: 500 });
+  } catch (err) {
+    console.error('Upload error:', err);
+    return NextResponse.json({ error: 'Server xetasi: ' + (err instanceof Error ? err.message : 'Unknown') }, { status: 500 });
   }
 }
