@@ -21,8 +21,6 @@ import {
   GraduationCap,
   Loader2,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-
 interface TeamMember {
   id: string;
   name: string;
@@ -44,44 +42,16 @@ export default function KomandaUzvlerPage() {
   useEffect(() => {
     async function loadMembers() {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const res = await fetch('/api/team-members');
+        const data = await res.json();
 
-        if (!user) return;
-
-        // Find the user's team
-        const { data: membership } = await supabase
-          .from('team_members')
-          .select('team_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .single();
-
-        if (!membership) return;
-
-        // Get team invite code
-        const { data: team } = await supabase
-          .from('teams')
-          .select('invite_code')
-          .eq('id', membership.team_id)
-          .single();
-
-        if (team?.invite_code) {
-          setInviteLink(`${window.location.origin}/devet/${team.invite_code}`);
+        if (data.inviteCode) {
+          setInviteLink(`${window.location.origin}/devet/${data.inviteCode}`);
         }
 
-        // Get all team members
-        const { data: teamMembers } = await supabase
-          .from('team_members')
-          .select('id, full_name, email, role, university, phone')
-          .eq('team_id', membership.team_id)
-          .order('joined_at', { ascending: true });
-
-        if (teamMembers && teamMembers.length > 0) {
+        if (data.members && data.members.length > 0) {
           setMembers(
-            teamMembers.map((m) => {
+            data.members.map((m: { id: number; full_name: string; email: string; role: string; university: string | null; phone: string | null }) => {
               const nameParts = (m.full_name ?? '').split(' ');
               const initials = nameParts
                 .map((p: string) => p[0] ?? '')
