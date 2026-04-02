@@ -18,8 +18,12 @@ export async function GET(request: NextRequest) {
   const { data } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", userId)
-    .single();
+    .eq("user_id", userId);
 
-  return NextResponse.json({ role: data?.role ?? "team_member" });
+  // Priority: super_admin > trainer > mentor > jury > team_member
+  const priority = ["super_admin", "trainer", "mentor", "jury", "team_member"];
+  const roles = (data ?? []).map((r: { role: string }) => r.role);
+  const bestRole = priority.find((p) => roles.includes(p)) ?? "team_member";
+
+  return NextResponse.json({ role: bestRole });
 }

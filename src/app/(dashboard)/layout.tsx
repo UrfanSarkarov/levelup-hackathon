@@ -43,13 +43,17 @@ export default async function DashboardLayout({
     let fetchedRole: AppRole = 'team_member';
     try {
       const serviceClient = createServiceClient();
-      const [{ data: profile }, { data: roleRow }] = await Promise.all([
+      const [{ data: profile }, { data: roleRows }] = await Promise.all([
         serviceClient.from('profiles').select('*').eq('id', supabaseUser.id).single(),
-        serviceClient.from('user_roles').select('role').eq('user_id', supabaseUser.id).single(),
+        serviceClient.from('user_roles').select('role').eq('user_id', supabaseUser.id),
       ]);
 
-      if (roleRow?.role) {
-        fetchedRole = roleRow.role as AppRole;
+      // Priority: super_admin > trainer > mentor > jury > team_member
+      const priority: AppRole[] = ['super_admin', 'trainer', 'mentor', 'jury', 'team_member'];
+      const roles = (roleRows ?? []).map((r: { role: string }) => r.role);
+      const bestRole = priority.find((p) => roles.includes(p));
+      if (bestRole) {
+        fetchedRole = bestRole;
       }
 
       userProfile = profile
