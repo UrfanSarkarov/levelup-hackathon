@@ -39,7 +39,7 @@ export async function GET() {
     // Get submission
     const { data: submission } = await supabase
       .from('submissions')
-      .select('id, title, description, problem, solution, tech_stack, demo_url, repo_url, video_url, is_draft, submitted_at')
+      .select('id, title, description, problem, solution, tech_stack, demo_url, repo_url, video_url, presentation_url, is_draft, submitted_at')
       .eq('team_id', membership.team_id)
       .limit(1)
       .single();
@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceSupabase();
 
-    const payload = {
+    // Build payload, gracefully handle columns that may not exist yet
+    const payload: Record<string, unknown> = {
       hackathon_id: hackathonId,
       team_id: teamId,
       title: formData.title || '',
@@ -97,23 +98,38 @@ export async function POST(request: NextRequest) {
       is_draft: isDraft,
       submitted_at: isDraft ? null : new Date().toISOString(),
     };
+    if (formData.presentationUrl !== undefined) {
+      payload.presentation_url = formData.presentationUrl || null;
+    }
 
     let resultId = submissionId;
 
     if (submissionId) {
-      const { error } = await supabase
-        .from('submissions')
-        .update(payload)
-        .eq('id', submissionId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      const { error } = await supabase.from('submissions').update(payload).eq('id', submissionId);
+      if (error) {
+        // Retry without presentation_url if column doesn't exist
+        if (error.message.includes('presentation_url')) {
+          delete payload.presentation_url;
+          const { error: e2 } = await supabase.from('submissions').update(payload).eq('id', submissionId);
+          if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
+        } else {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+      }
     } else {
-      const { data, error } = await supabase
-        .from('submissions')
-        .insert(payload)
-        .select('id')
-        .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      resultId = data?.id;
+      const { data, error } = await supabase.from('submissions').insert(payload).select('id').single();
+      if (error) {
+        if (error.message.includes('presentation_url')) {
+          delete payload.presentation_url;
+          const { data: d2, error: e2 } = await supabase.from('submissions').insert(payload).select('id').single();
+          if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
+          resultId = d2?.id;
+        } else {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+      } else {
+        resultId = data?.id;
+      }
     }
 
     return NextResponse.json({ success: true, submissionId: resultId });

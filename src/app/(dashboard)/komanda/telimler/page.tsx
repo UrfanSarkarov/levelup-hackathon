@@ -55,7 +55,7 @@ export default function TelimlerPage() {
         const data = await res.json();
 
         if (data.teamId) setTeamId(data.teamId);
-        if (data.teamStatus === 'rejected') { setRejected(true); setLoading(false); return; }
+        if (data.teamStatus !== 'accepted' && data.teamStatus !== 'finalist') { setRejected(true); setLoading(false); return; }
         if (data.teamMembers) setTeamMembers(data.teamMembers);
 
         setSessions(

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   // Get submission
   const { data: submission } = await supabase
     .from('submissions')
-    .select('id, title, description, problem, solution, tech_stack, demo_url, repo_url, video_url, is_draft, submitted_at')
+    .select('id, title, description, problem, solution, tech_stack, demo_url, repo_url, video_url, presentation_url, is_draft, submitted_at')
     .eq('team_id', teamId)
     .limit(1)
     .single();

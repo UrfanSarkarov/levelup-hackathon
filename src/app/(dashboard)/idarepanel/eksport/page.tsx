@@ -128,7 +128,7 @@ export default function EksportPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Melumat Eksportu</h1>
         <p className="text-muted-foreground">
-          Hackathon melumatlarini Excel formatinda yukleyin
+          Hackathon melumatlarini CSV formatinda yukleyin (Excel ile acila biler)
         </p>
       </div>
 
@@ -178,7 +178,7 @@ export default function EksportPage() {
           <div>
             <p className="font-medium text-sm">Eksport haqqinda</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Butun eksportlar Excel (.xlsx) formatinda yuklenir. Boyuk melumat
+              Butun eksportlar CSV formatinda yuklenir (Excel-de acila biler). Boyuk melumat
               setleri ucun yuklenme bir nece deqiqe ceke biler. Tam hesabat
               butun cedvelleri ehate edir.
             </p>

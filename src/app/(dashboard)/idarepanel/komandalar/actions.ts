@@ -12,7 +12,7 @@ function getSupabase() {
 
 export async function updateTeamStatus(
   teamId: string,
-  status: 'accepted' | 'rejected' | 'pending',
+  status: 'accepted' | 'rejected' | 'pending' | 'finalist',
 ) {
   const supabase = getSupabase();
 
@@ -26,7 +26,7 @@ export async function updateTeamStatus(
   }
 
   // Send notification to team members
-  if (status === 'accepted' || status === 'rejected') {
+  if (status === 'accepted' || status === 'rejected' || status === 'finalist') {
     try {
       // Get team name
       const { data: team } = await supabase
@@ -42,16 +42,20 @@ export async function updateTeamStatus(
         .eq('team_id', teamId);
 
       const title =
-        status === 'accepted'
-          ? 'Komandaniz qebul edildi!'
-          : 'Komandaniz secilmedi';
+        status === 'finalist'
+          ? 'Komandaniz finala kecdi!'
+          : status === 'accepted'
+            ? 'Komandaniz qebul edildi!'
+            : 'Komandaniz secilmedi';
 
       const body =
-        status === 'accepted'
-          ? `"${team?.name ?? ''}" komandasi Level UP hackathon-a qebul edildi. Novbeti merehele ucun hazirlasin!`
-          : `"${team?.name ?? ''}" komandasi bu defe secilmedi. Gelecek tedbirlerde gormek umidi ile!`;
+        status === 'finalist'
+          ? `"${team?.name ?? ''}" komandasi finala kecdi. Tebriklər! Sprint merhelesine hazirlasin!`
+          : status === 'accepted'
+            ? `"${team?.name ?? ''}" komandasi Level UP hackathon-a qebul edildi. Novbeti merehele ucun hazirlasin!`
+            : `"${team?.name ?? ''}" komandasi bu defe secilmedi. Gelecek tedbirlerde gormek umidi ile!`;
 
-      const notifType = status === 'accepted' ? 'team_update' : 'warning';
+      const notifType = status === 'finalist' ? 'team_update' : status === 'accepted' ? 'team_update' : 'warning';
 
       // Send notification to each member who has a linked user_id
       const notifications = (members ?? [])

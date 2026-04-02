@@ -17,7 +17,6 @@ import { Separator } from '@/components/ui/separator';
 import {
   Scale,
   Star,
-  Users,
   ChevronRight,
   Lock,
   AlertTriangle,
@@ -29,244 +28,74 @@ import {
   GitBranch,
   Video,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 interface AssignedTeam {
   id: string;
   name: string;
   track: string;
+  isCompleted: boolean;
   scoredCriteria: number;
-  totalCriteria: number;
+  scores: Record<string, number>;
 }
 
-interface ScoringCriterion {
+interface Criterion {
   id: string;
   name: string;
   maxScore: number;
   description: string;
 }
 
-const SCORING_CRITERIA: ScoringCriterion[] = [
-  {
-    id: 'c1',
-    name: 'Problemin aydinliqi',
-    maxScore: 10,
-    description: 'Komanda heqiqi bir problemi duzgun identifikasiya edibmi?',
-  },
-  {
-    id: 'c2',
-    name: 'Hellin innovativliyi',
-    maxScore: 10,
-    description: 'Teklif olunan hell movcud hellerden ne ile ferqlenir?',
-  },
-  {
-    id: 'c3',
-    name: 'Texniki icra imkani',
-    maxScore: 10,
-    description: 'Hellin texniki olaraq heyata kecirilmesi mumkundurmu?',
-  },
-  {
-    id: 'c4',
-    name: 'Potensial tesir',
-    maxScore: 10,
-    description: 'Layihenin potensial tesiri ne qeder boyukdur?',
-  },
-  {
-    id: 'c5',
-    name: 'Hedef auditoriya',
-    maxScore: 10,
-    description: 'Hedef auditoriya duzgun mueyyen olunubmu?',
-  },
-  {
-    id: 'c6',
-    name: 'Biznes modeli',
-    maxScore: 10,
-    description: 'Biznes modeli ve ya davamlilig plani varmi?',
-  },
-  {
-    id: 'c7',
-    name: 'Teqdimat keyfiyyeti',
-    maxScore: 10,
-    description: 'Komandanin teqdimati ne qeder aydin ve inandiricidur?',
-  },
-  {
-    id: 'c8',
-    name: 'Prototip ve demo',
-    maxScore: 10,
-    description: 'Prototip ve ya demo ne qeder funksionaldir?',
-  },
-  {
-    id: 'c9',
-    name: 'Inkisaf potensiali',
-    maxScore: 10,
-    description: 'Layihenin inkisaf potensiali (scalability) necedir?',
-  },
-];
-
-/* ── Page ────────────────────────────────────────────────── */
 export default function QiymetlendirmePage() {
   const [teams, setTeams] = useState<AssignedTeam[]>([]);
-  const [criteria, setCriteria] = useState<ScoringCriterion[]>(SCORING_CRITERIA);
+  const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [noRound, setNoRound] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<AssignedTeam | null>(null);
   const [scores, setScores] = useState<Record<string, number>>({});
-  const [activeRoundId, setActiveRoundId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [roundId, setRoundId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [teamSubmission, setTeamSubmission] = useState<{
-    title: string;
-    description: string | null;
-    problem: string | null;
-    solution: string | null;
-    demo_url: string | null;
-    repo_url: string | null;
-    video_url: string | null;
+    title: string; description: string | null; problem: string | null;
+    solution: string | null; demo_url: string | null; repo_url: string | null; video_url: string | null; presentation_url?: string | null;
   } | null>(null);
   const [teamFiles, setTeamFiles] = useState<{ name: string; url: string }[]>([]);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const supabase = createClient();
+        const res = await fetch('/api/jury-data');
+        const data = await res.json();
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) throw new Error('no user');
-        setUserId(user.id);
-
-        // Get active judging round
-        const { data: activeRound } = await supabase
-          .from('judging_rounds')
-          .select('*')
-          .eq('is_active', true)
-          .order('round_number', { ascending: true })
-          .limit(1)
-          .single();
-
-        if (!activeRound) throw new Error('no active round');
-        setActiveRoundId(activeRound.id);
-
-        // Get judge assignments with team info
-        const { data: assignments } = await supabase
-          .from('judge_assignments')
-          .select('id, team_id, is_completed, teams(name, track)')
-          .eq('round_id', activeRound.id)
-          .eq('judge_id', user.id);
-
-        if (!assignments || assignments.length === 0)
-          throw new Error('no assignments');
-
-        // Try to load scoring criteria
-        try {
-          const { data: dbCriteria } = await supabase
-            .from('scoring_criteria')
-            .select('id, name, max_score, description');
-
-          if (dbCriteria && dbCriteria.length > 0) {
-            setCriteria(
-              dbCriteria.map((c) => ({
-                id: c.id,
-                name: c.name,
-                maxScore: c.max_score,
-                description: c.description || '',
-              }))
-            );
-          }
-        } catch {
-          // scoring_criteria table may not exist, keep defaults
+        if (data.error === 'no_round' || data.error === 'no_assignments') {
+          setNoRound(true);
+          return;
         }
+        if (data.error) return;
 
-        // Get the effective criteria for counting
-        const effectiveCriteria = criteria;
-
-        // For each assignment, check how many criteria are scored
-        const loadedTeams: AssignedTeam[] = await Promise.all(
-          assignments.map(async (a) => {
-            const rawTeams = a.teams;
-            const teamData =
-              Array.isArray(rawTeams) && rawTeams.length > 0
-                ? { name: rawTeams[0].name as string, track: rawTeams[0].track as string }
-                : typeof rawTeams === 'object' && rawTeams !== null && !Array.isArray(rawTeams)
-                  ? (rawTeams as unknown as { name: string; track: string })
-                  : { name: 'Namelum komanda', track: '' };
-
-            let scoredCount = 0;
-            try {
-              const { data: existingScores } = await supabase
-                .from('scores')
-                .select('id')
-                .eq('judge_id', user.id)
-                .eq('team_id', a.team_id)
-                .eq('round_id', activeRound.id);
-
-              scoredCount = existingScores?.length ?? 0;
-            } catch {
-              // scores table may not exist yet
-            }
-
-            return {
-              id: a.team_id,
-              name: teamData.name,
-              track: teamData.track,
-              scoredCriteria: a.is_completed
-                ? effectiveCriteria.length
-                : scoredCount,
-              totalCriteria: effectiveCriteria.length,
-            };
-          })
-        );
-
-        setTeams(loadedTeams);
+        setRoundId(data.roundId);
+        setCriteria(data.criteria);
+        setTeams(data.teams);
       } catch {
-        // Supabase error — teams remain empty
+        // error
       } finally {
         setLoading(false);
       }
     }
-
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load existing scores when a team is selected
   async function handleSelectTeam(team: AssignedTeam) {
     setSelectedTeam(team);
     setSaveMessage(null);
     setTeamSubmission(null);
     setTeamFiles([]);
 
-    // Initialize empty scores
-    const emptyScores: Record<string, number> = {};
-    criteria.forEach((c) => {
-      emptyScores[c.id] = 0;
-    });
-    setScores(emptyScores);
-
-    // Load existing scores
-    if (userId && activeRoundId) {
-      try {
-        const supabase = createClient();
-        const { data: existingScores } = await supabase
-          .from('scores')
-          .select('criterion_id, score')
-          .eq('judge_id', userId)
-          .eq('team_id', team.id)
-          .eq('round_id', activeRoundId);
-
-        if (existingScores && existingScores.length > 0) {
-          const loaded: Record<string, number> = { ...emptyScores };
-          existingScores.forEach((s) => {
-            loaded[s.criterion_id] = s.score;
-          });
-          setScores(loaded);
-        }
-      } catch {
-        // scores table may not exist, keep empty scores
-      }
-    }
+    // Set scores from pre-loaded data
+    const loadedScores: Record<string, number> = {};
+    criteria.forEach(c => { loadedScores[c.id] = team.scores[c.id] ?? 0; });
+    setScores(loadedScores);
 
     // Load team submission & files
     try {
@@ -274,121 +103,50 @@ export default function QiymetlendirmePage() {
       const data = await res.json();
       if (data.submission) setTeamSubmission(data.submission);
       if (data.files) setTeamFiles(data.files);
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
 
   function handleScoreChange(criterionId: string, value: number, maxScore: number) {
     const clamped = Math.max(0, Math.min(maxScore, value));
-    setScores((prev) => ({ ...prev, [criterionId]: clamped }));
+    setScores(prev => ({ ...prev, [criterionId]: clamped }));
   }
 
-  async function handleSaveScores() {
-    if (!selectedTeam) return;
-    setSaving(true);
+  async function handleSave(submit: boolean) {
+    if (!selectedTeam || !roundId) return;
+    if (submit) setSubmitting(true); else setSaving(true);
     setSaveMessage(null);
 
-    if (!userId || !activeRoundId) {
-      setSaving(false);
-      setSaveMessage('Istifadeci ve ya raund melumati tapilmadi');
-      return;
-    }
-
     try {
-      const supabase = createClient();
+      const res = await fetch('/api/jury-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roundId, teamId: selectedTeam.id, scores, submit }),
+      });
+      const data = await res.json();
 
-      for (const criterion of criteria) {
-        await supabase.from('scores').upsert(
-          {
-            judge_id: userId,
-            team_id: selectedTeam.id,
-            round_id: activeRoundId,
-            criterion_id: criterion.id,
-            score: scores[criterion.id] ?? 0,
-          },
-          { onConflict: 'judge_id,team_id,round_id,criterion_id' }
-        );
-      }
-
-      // Update scored criteria count in local state
-      const scoredCount = Object.values(scores).filter((v) => v > 0).length;
-      setTeams((prev) =>
-        prev.map((t) =>
+      if (data.error) {
+        setSaveMessage('Xeta: ' + data.error);
+      } else {
+        const scoredCount = Object.values(scores).filter(v => v > 0).length;
+        setTeams(prev => prev.map(t =>
           t.id === selectedTeam.id
-            ? { ...t, scoredCriteria: scoredCount }
+            ? { ...t, scoredCriteria: submit ? criteria.length : scoredCount, isCompleted: submit ? true : t.isCompleted, scores }
             : t
-        )
-      );
-
-      setSaveMessage('Qaralama ugurla saxlanildi');
+        ));
+        if (submit) {
+          setSelectedTeam(prev => prev ? { ...prev, isCompleted: true, scoredCriteria: criteria.length } : null);
+        }
+        setSaveMessage(submit ? 'Qiymetlendirme ugurla gonderildi!' : 'Qaralama ugurla saxlanildi');
+      }
     } catch {
       setSaveMessage('Xeta bas verdi');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleSubmitScores() {
-    if (!selectedTeam) return;
-    setSubmitting(true);
-    setSaveMessage(null);
-
-    if (!userId || !activeRoundId) {
-      setSubmitting(false);
-      setSaveMessage('Istifadeci ve ya raund melumati tapilmadi');
-      return;
-    }
-
-    try {
-      const supabase = createClient();
-
-      // Save all scores first
-      for (const criterion of criteria) {
-        await supabase.from('scores').upsert(
-          {
-            judge_id: userId,
-            team_id: selectedTeam.id,
-            round_id: activeRoundId,
-            criterion_id: criterion.id,
-            score: scores[criterion.id] ?? 0,
-          },
-          { onConflict: 'judge_id,team_id,round_id,criterion_id' }
-        );
-      }
-
-      // Mark assignment as completed
-      await supabase
-        .from('judge_assignments')
-        .update({ is_completed: true })
-        .eq('judge_id', userId)
-        .eq('team_id', selectedTeam.id)
-        .eq('round_id', activeRoundId);
-
-      // Update local state
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.id === selectedTeam.id
-            ? { ...t, scoredCriteria: t.totalCriteria }
-            : t
-        )
-      );
-      setSelectedTeam((prev) =>
-        prev ? { ...prev, scoredCriteria: prev.totalCriteria } : null
-      );
-
-      setSaveMessage('Qiymetlendirme ugurla gonderildi!');
-    } catch {
-      setSaveMessage('Xeta bas verdi');
-    } finally {
       setSubmitting(false);
     }
   }
 
-  const totalScore = criteria.reduce(
-    (sum, c) => sum + (scores[c.id] ?? 0),
-    0
-  );
+  const totalScore = criteria.reduce((sum, c) => sum + (scores[c.id] ?? 0), 0);
   const maxTotalScore = criteria.reduce((sum, c) => sum + c.maxScore, 0);
 
   if (loading) {
@@ -399,52 +157,62 @@ export default function QiymetlendirmePage() {
     );
   }
 
+  if (noRound) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-[#0D47A1]/10 p-2">
+            <Scale className="size-5 text-[#0D47A1]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Qiymetlendirme</h1>
+            <p className="text-muted-foreground">Teyin olunmus komandalari qiymetlendirin</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Scale className="mb-3 size-12" />
+            <p className="font-medium">Hazirda aktiv qiymetlendirme raund yoxdur</p>
+            <p className="text-sm mt-1">Admin terefinden raund yaradilmalidir</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="rounded-lg bg-[#0D47A1]/10 p-2">
           <Scale className="size-5 text-[#0D47A1]" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Qiymetlendirme
-          </h1>
-          <p className="text-muted-foreground">
-            Teyin olunmus komandalari qiymetlendirin
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Qiymetlendirme</h1>
+          <p className="text-muted-foreground">Teyin olunmus komandalari qiymetlendirin</p>
         </div>
       </div>
 
-      {/* Assigned teams list */}
+      {/* Teams list */}
       <Card>
         <CardHeader>
           <CardTitle>Teyin olunmus komandalar</CardTitle>
-          <CardDescription>
-            Qiymetlendirme prosesini basladin
-          </CardDescription>
+          <CardDescription>Qiymetlendirme ucun komanda secin</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {teams.length === 0 && (
-              <p className="py-8 text-center text-muted-foreground">
-                Hec bir komanda teyin olunmayib
-              </p>
+              <p className="py-8 text-center text-muted-foreground">Hec bir komanda teyin olunmayib</p>
             )}
-            {teams.map((team) => {
-              const progressPercent = Math.round(
-                (team.scoredCriteria / team.totalCriteria) * 100
-              );
-              const isComplete = team.scoredCriteria === team.totalCriteria;
+            {teams.map(team => {
+              const progressPercent = criteria.length > 0 ? Math.round((team.scoredCriteria / criteria.length) * 100) : 0;
+              const isComplete = team.isCompleted;
               const isSelected = selectedTeam?.id === team.id;
 
               return (
                 <div
                   key={team.id}
                   onClick={() => handleSelectTeam(team)}
-                  className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50 ${
-                    isSelected ? 'border-[#0D47A1] bg-[#0D47A1]/5' : ''
-                  }`}
+                  className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50 ${isSelected ? 'border-[#0D47A1] bg-[#0D47A1]/5' : ''}`}
                 >
                   <div className="flex items-center gap-4">
                     <div className="flex size-11 items-center justify-center rounded-full bg-[#2EC4B6]/10 text-sm font-bold text-[#2EC4B6]">
@@ -457,32 +225,16 @@ export default function QiymetlendirmePage() {
                       </div>
                       <div className="mt-2 flex items-center gap-3">
                         <Progress value={progressPercent} className="h-2 w-32" />
-                        <span className="text-xs text-muted-foreground">
-                          {team.scoredCriteria} / {team.totalCriteria} meyar
-                        </span>
+                        <span className="text-xs text-muted-foreground">{team.scoredCriteria} / {criteria.length} meyar</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge
-                      className={
-                        isComplete
-                          ? 'bg-[#6BBF6B] text-white'
-                          : team.scoredCriteria > 0
-                            ? 'bg-amber-500 text-white'
-                            : ''
-                      }
-                      variant={team.scoredCriteria === 0 ? 'secondary' : 'default'}
-                    >
-                      {isComplete
-                        ? 'Tamamlandi'
-                        : team.scoredCriteria > 0
-                          ? 'Davam edir'
-                          : 'Baslanmayib'}
+                    <Badge className={isComplete ? 'bg-[#6BBF6B] text-white' : team.scoredCriteria > 0 ? 'bg-amber-500 text-white' : ''}
+                      variant={team.scoredCriteria === 0 ? 'secondary' : 'default'}>
+                      {isComplete ? 'Tamamlandi' : team.scoredCriteria > 0 ? 'Davam edir' : 'Baslanmayib'}
                     </Badge>
-                    <Button variant="ghost" size="sm">
-                      <ChevronRight className="size-4" />
-                    </Button>
+                    <ChevronRight className="size-4 text-muted-foreground" />
                   </div>
                 </div>
               );
@@ -520,47 +272,41 @@ export default function QiymetlendirmePage() {
                 <p className="text-sm">{teamSubmission.solution}</p>
               </div>
             )}
-
-            {/* Links */}
             <div className="flex flex-wrap gap-3">
+              {teamSubmission.presentation_url && (
+                <a href={teamSubmission.presentation_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-[#0D47A1] hover:bg-[#0D47A1]/5">
+                  <FileText className="size-3.5" /> Teqdimat <ExternalLink className="size-3" />
+                </a>
+              )}
               {teamSubmission.demo_url && (
                 <a href={teamSubmission.demo_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-[#0D47A1] hover:bg-[#0D47A1]/5">
-                  <Globe className="size-3.5" /> Demo
-                  <ExternalLink className="size-3" />
+                  <Globe className="size-3.5" /> Demo <ExternalLink className="size-3" />
                 </a>
               )}
               {teamSubmission.repo_url && (
                 <a href={teamSubmission.repo_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-[#0D47A1] hover:bg-[#0D47A1]/5">
-                  <GitBranch className="size-3.5" /> Repository
-                  <ExternalLink className="size-3" />
+                  <GitBranch className="size-3.5" /> Repository <ExternalLink className="size-3" />
                 </a>
               )}
               {teamSubmission.video_url && (
                 <a href={teamSubmission.video_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-[#0D47A1] hover:bg-[#0D47A1]/5">
-                  <Video className="size-3.5" /> Video
-                  <ExternalLink className="size-3" />
+                  <Video className="size-3.5" /> Video <ExternalLink className="size-3" />
                 </a>
               )}
             </div>
-
-            {/* Files */}
             {teamFiles.length > 0 && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-2">Yuklenmiş fayllar</p>
                 <div className="space-y-2">
-                  {teamFiles.map((f) => (
-                    <a
-                      key={f.name}
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted/50"
-                    >
+                  {teamFiles.map(f => (
+                    <a key={f.name} href={f.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted/50">
                       <FileText className="size-4 text-[#0D47A1] shrink-0" />
-                      <span className="text-[#0D47A1] hover:underline">{f.name}</span>
+                      <span className="text-[#0D47A1]">{f.name}</span>
                       <ExternalLink className="size-3 text-muted-foreground ml-auto" />
                     </a>
                   ))}
@@ -575,25 +321,13 @@ export default function QiymetlendirmePage() {
       <Card className={selectedTeam ? '' : 'opacity-60'}>
         <CardHeader>
           <div className="flex items-center gap-2">
-            {selectedTeam ? (
-              <Star className="size-4 text-amber-500" />
-            ) : (
-              <Lock className="size-4 text-muted-foreground" />
-            )}
-            <CardTitle>
-              {selectedTeam
-                ? `${selectedTeam.name} - Qiymetlendirme`
-                : 'Qiymetlendirme interfeysi'}
-            </CardTitle>
+            {selectedTeam ? <Star className="size-4 text-amber-500" /> : <Lock className="size-4 text-muted-foreground" />}
+            <CardTitle>{selectedTeam ? `${selectedTeam.name} - Qiymetlendirme` : 'Qiymetlendirme interfeysi'}</CardTitle>
           </div>
-          <CardDescription>
-            {selectedTeam
-              ? `${selectedTeam.track} track`
-              : 'Yuxaridaki siyahidan komanda secin'}
-          </CardDescription>
+          <CardDescription>{selectedTeam ? `${selectedTeam.track} track` : 'Yuxaridaki siyahidan komanda secin'}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {criteria.map((criterion) => (
+          {criteria.map((criterion, i) => (
             <div key={criterion.id} className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -601,43 +335,26 @@ export default function QiymetlendirmePage() {
                     <Star className="size-4 text-amber-500" />
                     {criterion.name}
                   </Label>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {criterion.description}
-                  </p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{criterion.description}</p>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  / {criterion.maxScore}
-                </span>
+                <span className="text-sm text-muted-foreground">/ {criterion.maxScore}</span>
               </div>
               <div className="flex items-center gap-4">
                 <Input
-                  type="number"
-                  min={0}
-                  max={criterion.maxScore}
-                  placeholder="0"
+                  type="number" min={0} max={criterion.maxScore} placeholder="0"
                   disabled={!selectedTeam}
                   value={scores[criterion.id] ?? ''}
-                  onChange={(e) =>
-                    handleScoreChange(
-                      criterion.id,
-                      parseInt(e.target.value) || 0,
-                      criterion.maxScore
-                    )
-                  }
+                  onChange={e => handleScoreChange(criterion.id, parseInt(e.target.value) || 0, criterion.maxScore)}
                   className="w-24"
                 />
                 <div className="h-2 flex-1 rounded-full bg-muted">
                   {selectedTeam && (
-                    <div
-                      className="h-2 rounded-full bg-[#0D47A1] transition-all"
-                      style={{
-                        width: `${((scores[criterion.id] ?? 0) / criterion.maxScore) * 100}%`,
-                      }}
-                    />
+                    <div className="h-2 rounded-full bg-[#0D47A1] transition-all"
+                      style={{ width: `${((scores[criterion.id] ?? 0) / criterion.maxScore) * 100}%` }} />
                   )}
                 </div>
               </div>
-              {criterion.id !== criteria[criteria.length - 1]?.id && <Separator />}
+              {i !== criteria.length - 1 && <Separator />}
             </div>
           ))}
 
@@ -645,42 +362,24 @@ export default function QiymetlendirmePage() {
 
           <div className="flex items-center justify-between">
             <p className="text-lg font-bold">Umumi bal</p>
-            <p className="text-2xl font-bold text-[#0D47A1]">
-              {totalScore} / {maxTotalScore}
-            </p>
+            <p className="text-2xl font-bold text-[#0D47A1]">{totalScore} / {maxTotalScore}</p>
           </div>
 
           {saveMessage && (
-            <div
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
-                saveMessage.includes('ugurla')
-                  ? 'border border-green-300 bg-green-50 text-green-800'
-                  : 'border border-amber-300 bg-amber-50 text-amber-800'
-              }`}
-            >
-              {saveMessage.includes('ugurla') ? (
-                <Check className="size-4 shrink-0" />
-              ) : (
-                <AlertTriangle className="size-4 shrink-0" />
-              )}
+            <div className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
+              saveMessage.includes('ugurla') ? 'border border-green-300 bg-green-50 text-green-800' : 'border border-amber-300 bg-amber-50 text-amber-800'
+            }`}>
+              {saveMessage.includes('ugurla') ? <Check className="size-4 shrink-0" /> : <AlertTriangle className="size-4 shrink-0" />}
               <span>{saveMessage}</span>
             </div>
           )}
 
           <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              disabled={!selectedTeam || saving}
-              onClick={handleSaveScores}
-            >
+            <Button variant="outline" disabled={!selectedTeam || saving} onClick={() => handleSave(false)}>
               {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
               Qaralama saxla
             </Button>
-            <Button
-              disabled={!selectedTeam || submitting}
-              className="bg-[#0D47A1] text-white"
-              onClick={handleSubmitScores}
-            >
+            <Button disabled={!selectedTeam || submitting} className="bg-[#0D47A1] text-white" onClick={() => handleSave(true)}>
               {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
               Qiymetlendirmeni gonder
             </Button>
