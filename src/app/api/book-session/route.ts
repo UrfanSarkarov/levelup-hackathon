@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
       .insert({
         session_id: sessionId,
         team_id: teamId,
-        user_id: user.id,
         status: 'confirmed',
       });
 
