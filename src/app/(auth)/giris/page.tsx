@@ -72,14 +72,11 @@ export default function GirisPage() {
       });
 
       if (!authError && authData.user) {
-        // Check user role to redirect to correct dashboard
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', authData.user.id)
-          .single();
-
+        // Fetch role from server-side API (bypasses RLS)
+        const roleRes = await fetch(`/api/user-role?userId=${authData.user.id}`);
+        const roleData = await roleRes.json();
         const role = roleData?.role ?? 'team_member';
+
         const roleRedirects: Record<string, string> = {
           super_admin: '/idarepanel',
           trainer: '/telminci',
