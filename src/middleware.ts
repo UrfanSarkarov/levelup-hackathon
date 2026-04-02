@@ -14,6 +14,7 @@ const publicRoutes = [
   '/api/lup-auth',
   '/api/hesab-yarat',
   '/api/user-role',
+  '/api/link-team',
   '/lup-secure-panel',
 ];
 

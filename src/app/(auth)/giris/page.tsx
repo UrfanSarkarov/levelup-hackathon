@@ -72,6 +72,13 @@ export default function GirisPage() {
       });
 
       if (!authError && authData.user) {
+        // Link team member record by email (if registered via form)
+        await fetch('/api/link-team', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: authData.user.id, email: authData.user.email }),
+        });
+
         // Fetch role from server-side API (bypasses RLS)
         const roleRes = await fetch(`/api/user-role?userId=${authData.user.id}`);
         const roleData = await roleRes.json();
