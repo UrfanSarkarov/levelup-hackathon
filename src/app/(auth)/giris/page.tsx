@@ -66,13 +66,28 @@ export default function GirisPage() {
 
       // 2. If admin login fails, try Supabase Auth (team login with email)
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: username,
         password,
       });
 
-      if (!authError) {
-        router.push("/komanda");
+      if (!authError && authData.user) {
+        // Check user role to redirect to correct dashboard
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', authData.user.id)
+          .single();
+
+        const role = roleData?.role ?? 'team_member';
+        const roleRedirects: Record<string, string> = {
+          super_admin: '/idarepanel',
+          trainer: '/telminci',
+          mentor: '/mentor',
+          jury: '/munsif',
+          team_member: '/komanda',
+        };
+        router.push(roleRedirects[role] || '/komanda');
         return;
       }
 

@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readdir, readFile } from "fs/promises";
-import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
-const SESSION_TOKEN = process.env.SESSION_TOKEN || "lup-session-9f3k2m7x";
+function getSessionToken() {
+  return process.env.SESSION_TOKEN || "lup-session-9f3k2m7x";
+}
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 function isAuthenticated(request: NextRequest): boolean {
   const token = request.cookies.get("lup_session")?.value;
-  return token === SESSION_TOKEN;
+  return token === getSessionToken();
 }
 
 export async function GET(request: NextRequest) {
@@ -14,31 +22,45 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const dataDir = path.join(process.cwd(), "data", "registrations");
+  const supabase = getSupabase();
 
-    let files: string[];
-    try {
-      files = await readdir(dataDir);
-    } catch {
+  try {
+    // Get active hackathon
+    const { data: hackathon } = await supabase
+      .from("hackathons")
+      .select("id")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!hackathon) {
       return NextResponse.json({ registrations: [], count: 0 });
     }
 
-    const jsonFiles = files.filter((f) => f.endsWith(".json"));
-    const registrations = await Promise.all(
-      jsonFiles.map(async (file) => {
-        const content = await readFile(path.join(dataDir, file), "utf-8");
-        return { filename: file, ...JSON.parse(content) };
-      })
-    );
+    // Get all registrations with form_data
+    const { data: registrations } = await supabase
+      .from("registrations")
+      .select("id, team_id, form_data, submitted_at, teams(name, track, status)")
+      .eq("hackathon_id", hackathon.id)
+      .order("submitted_at", { ascending: false });
 
-    registrations.sort((a, b) => {
-      const dateA = a.filename.split("_").pop()?.replace(".json", "") || "";
-      const dateB = b.filename.split("_").pop()?.replace(".json", "") || "";
-      return dateB.localeCompare(dateA);
+    const formatted = (registrations ?? []).map((r) => {
+      const formData = (r.form_data as Record<string, unknown>) ?? {};
+      const team = Array.isArray(r.teams) ? r.teams[0] : r.teams;
+      return {
+        id: r.id,
+        teamId: r.team_id,
+        komandaAdi: (team as { name?: string })?.name ?? formData.komandaAdi ?? "—",
+        istiqamet: (team as { track?: string })?.track ?? formData.istiqamet ?? "—",
+        status: (team as { status?: string })?.status ?? "pending",
+        members: formData.members ?? [],
+        ideya: formData.ideya ?? "",
+        submittedAt: r.submitted_at,
+        ...formData,
+      };
     });
 
-    return NextResponse.json({ registrations, count: registrations.length });
+    return NextResponse.json({ registrations: formatted, count: formatted.length });
   } catch {
     return NextResponse.json({ error: "Server xətası" }, { status: 500 });
   }

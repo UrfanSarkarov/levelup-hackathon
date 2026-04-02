@@ -39,34 +39,40 @@ export default async function DashboardLayout({
   let userRole: AppRole;
 
   if (supabaseUser) {
-    // Supabase user — try to fetch profile from DB
+    // Supabase user — fetch profile and role from DB
+    let fetchedRole: AppRole = 'team_member';
     try {
       const supabase = await createClient();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', supabaseUser.id)
-        .single();
+      const [{ data: profile }, { data: roleRow }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', supabaseUser.id).single(),
+        supabase.from('user_roles').select('role').eq('user_id', supabaseUser.id).single(),
+      ]);
 
-      userProfile = profile ?? {
-        id: supabaseUser.id,
-        email: supabaseUser.email ?? '',
-        full_name: supabaseUser.user_metadata?.full_name ?? 'İstifadəçi',
-        avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,
-        role: 'team_member' as AppRole,
-        phone: null,
-        bio: null,
-        organization: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      if (roleRow?.role) {
+        fetchedRole = roleRow.role as AppRole;
+      }
+
+      userProfile = profile
+        ? { ...profile, role: fetchedRole }
+        : {
+            id: supabaseUser.id,
+            email: supabaseUser.email ?? '',
+            full_name: supabaseUser.user_metadata?.full_name ?? 'İstifadəçi',
+            avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,
+            role: fetchedRole,
+            phone: null,
+            bio: null,
+            organization: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
     } catch {
       userProfile = {
         id: supabaseUser.id,
         email: supabaseUser.email ?? '',
         full_name: supabaseUser.user_metadata?.full_name ?? 'İstifadəçi',
         avatar_url: null,
-        role: 'team_member' as AppRole,
+        role: fetchedRole,
         phone: null,
         bio: null,
         organization: null,
@@ -74,7 +80,7 @@ export default async function DashboardLayout({
         updated_at: new Date().toISOString(),
       };
     }
-    userRole = userProfile.role;
+    userRole = fetchedRole;
   } else {
     // Admin cookie auth — use admin profile
     userProfile = {
