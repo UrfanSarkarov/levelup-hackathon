@@ -207,8 +207,8 @@ export default function SessiyalarPage() {
                 <Label htmlFor="is_online">Onlayn sessiya</Label>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="location">Mekan</Label>
-                <Input id="location" name="location" placeholder="ADA Universiteti, Otaq 301" />
+                <Label htmlFor="location">{isOnline ? 'Gorusme linki' : 'Mekan'}</Label>
+                <Input id="location" name="location" placeholder={isOnline ? 'https://meet.google.com/...' : 'ADA Universiteti, Otaq 301'} />
               </div>
               <Button type="submit" className="w-full bg-[#0D47A1] hover:bg-[#0D47A1]/90" disabled={submitting}>
                 {submitting ? 'Yaradilir...' : 'Sessiyanı yarat'}

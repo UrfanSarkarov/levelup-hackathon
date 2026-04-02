@@ -13,6 +13,9 @@ import {
   Timer,
   Users,
   Loader2,
+  Monitor,
+  MapPin,
+  ExternalLink,
 } from 'lucide-react';
 
 interface MentorSlot {
@@ -23,6 +26,8 @@ interface MentorSlot {
   duration: string;
   teamName: string | null;
   status: 'available' | 'booked' | 'completed';
+  is_online: boolean;
+  location: string | null;
 }
 
 function statusLabel(status: MentorSlot['status']): string {
@@ -52,7 +57,7 @@ export default function MentorSlotlarPage() {
         const data = await res.json();
 
         setSlots(
-          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; booked: number; teams: { teamName: string | null }[] }) => {
+          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; booked: number; teams: { teamName: string | null }[]; is_online: boolean; location: string | null }) => {
             const dateObj = new Date(s.session_date + 'T00:00:00');
             const dateStr = dateObj.toLocaleDateString('az-AZ', { day: 'numeric', month: 'long', year: 'numeric' });
             const startTime = s.start_time.slice(0, 5);
@@ -75,6 +80,8 @@ export default function MentorSlotlarPage() {
               duration: `${durationMin > 0 ? durationMin : 60} deqiqe`,
               teamName: s.teams?.[0]?.teamName ?? null,
               status,
+              is_online: s.is_online,
+              location: s.location,
             };
           })
         );
@@ -108,40 +115,66 @@ export default function MentorSlotlarPage() {
         <div className="space-y-4">
           {slots.map((slot) => (
             <Card key={slot.id}>
-              <CardContent className="flex items-center justify-between py-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex size-12 items-center justify-center rounded-lg bg-[#0D47A1]/10">
-                    <Calendar className="size-5 text-[#0D47A1]" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">{slot.title}</p>
-                    <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="size-3.5" />
-                        {slot.date}
-                      </span>
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="size-3.5" />
-                        {slot.time}
-                      </span>
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Timer className="size-3.5" />
-                        {slot.duration}
-                      </span>
+              <CardContent className="py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#0D47A1]/10">
+                      <Calendar className="size-5 text-[#0D47A1]" />
                     </div>
-                    {slot.teamName ? (
-                      <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                        <Users className="size-3.5" />
-                        Komanda: <span className="font-medium">{slot.teamName}</span>
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-sm text-muted-foreground">Bron olunmayib</p>
-                    )}
+                    <div>
+                      <p className="font-semibold">{slot.title}</p>
+                      <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Calendar className="size-3.5" />
+                          {slot.date}
+                        </span>
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="size-3.5" />
+                          {slot.time}
+                        </span>
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Timer className="size-3.5" />
+                          {slot.duration}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                        {slot.is_online ? (
+                          <>
+                            <Monitor className="size-3.5 text-[#2EC4B6]" />
+                            {slot.location ? (
+                              <a href={slot.location} target="_blank" rel="noopener noreferrer" className="text-[#0D47A1] hover:underline flex items-center gap-1">
+                                Onlayn gorusme linki <ExternalLink className="size-3" />
+                              </a>
+                            ) : (
+                              <span>Onlayn</span>
+                            )}
+                          </>
+                        ) : slot.location ? (
+                          <>
+                            <MapPin className="size-3.5 text-[#0D47A1]" />
+                            <span>{slot.location}</span>
+                          </>
+                        ) : (
+                          <>
+                            <MapPin className="size-3.5" />
+                            <span>Mekan teyin edilmeyib</span>
+                          </>
+                        )}
+                      </div>
+                      {slot.teamName ? (
+                        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                          <Users className="size-3.5" />
+                          Komanda: <span className="font-medium">{slot.teamName}</span>
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm text-muted-foreground">Bron olunmayib</p>
+                      )}
+                    </div>
                   </div>
+                  <Badge className={statusColor(slot.status)}>
+                    {statusLabel(slot.status)}
+                  </Badge>
                 </div>
-                <Badge className={statusColor(slot.status)}>
-                  {statusLabel(slot.status)}
-                </Badge>
               </CardContent>
             </Card>
           ))}

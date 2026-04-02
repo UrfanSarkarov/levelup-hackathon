@@ -45,7 +45,7 @@ export async function createSession(formData: {
       session_date: formData.session_date,
       start_time: formData.start_time,
       end_time: formData.end_time,
-      location: formData.is_online ? null : formData.location,
+      location: formData.location || null,
       is_online: formData.is_online,
       capacity: formData.capacity,
       host_id: formData.host_id || null,
@@ -128,7 +128,8 @@ export async function getSessions() {
     type: s.session_type,
     currentAttendees: bookingCounts.get(s.id) ?? 0,
     maxAttendees: s.capacity ?? 30,
-    location: s.is_online ? null : s.location,
+    location: s.location,
+    is_online: s.is_online,
   }));
 
   return { sessions };

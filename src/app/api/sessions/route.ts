@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Fetch sessions
     const { data: sessions } = await supabase
       .from('sessions')
-      .select('id, title, description, session_type, session_date, start_time, end_time, capacity, is_online, host_id')
+      .select('id, title, description, session_type, session_date, start_time, end_time, capacity, is_online, location, host_id')
       .eq('session_type', type)
       .order('session_date', { ascending: true });
 
@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
         end_time: s.end_time,
         capacity: s.capacity ?? 30,
         is_online: s.is_online,
+        location: s.location,
         host_name: host?.full_name ?? null,
         expertise_area: host?.expertise_area ?? null,
         booked: bookingCounts[s.id] ?? 0,
@@ -106,7 +107,17 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ sessions: result, teamId: myTeamId, teamStatus });
+    // Get team members for display
+    let teamMembers: { name: string }[] = [];
+    if (myTeamId) {
+      const { data: members } = await supabase
+        .from('team_members')
+        .select('full_name')
+        .eq('team_id', myTeamId);
+      teamMembers = (members ?? []).map((m: { full_name: string }) => ({ name: m.full_name }));
+    }
+
+    return NextResponse.json({ sessions: result, teamId: myTeamId, teamStatus, teamMembers });
   } catch (err) {
     console.error('Sessions API error:', err);
     return NextResponse.json({ sessions: [], teamId: null, teamStatus: null });

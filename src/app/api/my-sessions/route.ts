@@ -31,10 +31,9 @@ export async function GET(request: NextRequest) {
 
     if (!sessions) return NextResponse.json({ sessions: [] });
 
-    // Booking info per session
     const sessionIds = sessions.map(s => s.id);
-    let bookingCounts: Record<string, number> = {};
-    let bookingDetails: Record<string, { teamName: string | null }[]> = {};
+    const bookingCounts: Record<string, number> = {};
+    const bookingDetails: Record<string, { teamName: string | null }[]> = {};
 
     if (sessionIds.length > 0) {
       const { data: bookings } = await supabase
@@ -69,5 +68,45 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ sessions: result });
   } catch {
     return NextResponse.json({ sessions: [] });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { sessionId, status } = await request.json();
+    if (!sessionId || !status) {
+      return NextResponse.json({ error: 'sessionId ve status lazimdir' }, { status: 400 });
+    }
+
+    const authClient = await createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Giris edin' }, { status: 401 });
+    }
+
+    const supabase = getServiceSupabase();
+
+    const { data: session } = await supabase
+      .from('sessions')
+      .select('id, host_id')
+      .eq('id', sessionId)
+      .single();
+
+    if (!session || session.host_id !== user.id) {
+      return NextResponse.json({ error: 'Icaze yoxdur' }, { status: 403 });
+    }
+
+    const { error } = await supabase
+      .from('sessions')
+      .update({ status })
+      .eq('id', sessionId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: 'Server xetasi' }, { status: 500 });
   }
 }

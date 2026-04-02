@@ -120,3 +120,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Server xetasi' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { sessionId, teamId } = await request.json();
+    if (!sessionId || !teamId) {
+      return NextResponse.json({ error: 'sessionId ve teamId lazimdir' }, { status: 400 });
+    }
+
+    const authClient = await createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Giris edin' }, { status: 401 });
+    }
+
+    const supabase = getServiceSupabase();
+
+    const { error } = await supabase
+      .from('session_bookings')
+      .delete()
+      .eq('session_id', sessionId)
+      .eq('team_id', teamId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Cancel booking error:', err);
+    return NextResponse.json({ error: 'Server xetasi' }, { status: 500 });
+  }
+}

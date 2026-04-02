@@ -19,6 +19,9 @@ import {
   MapPin,
   Loader2,
   XCircle,
+  Users,
+  ExternalLink,
+  X,
 } from 'lucide-react';
 
 interface MentorSlot {
@@ -27,16 +30,19 @@ interface MentorSlot {
   expertise: string;
   date: string;
   time: string;
-  mode: 'online' | 'offline';
   isBooked: boolean;
+  is_online: boolean;
+  location: string | null;
 }
 
 export default function MentorluqPage() {
   const [slots, setSlots] = useState<MentorSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [rejected, setRejected] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<{ name: string }[]>([]);
 
   useEffect(() => {
     async function loadSlots() {
@@ -46,9 +52,10 @@ export default function MentorluqPage() {
 
         if (data.teamId) setTeamId(data.teamId);
         if (data.teamStatus === 'rejected') { setRejected(true); setLoading(false); return; }
+        if (data.teamMembers) setTeamMembers(data.teamMembers);
 
         setSlots(
-          (data.sessions ?? []).map((s: { id: string; title: string; host_name: string | null; expertise_area: string | null; description: string | null; session_date: string; start_time: string; end_time: string; is_online: boolean; isBooked: boolean }) => {
+          (data.sessions ?? []).map((s: { id: string; title: string; host_name: string | null; expertise_area: string | null; description: string | null; session_date: string; start_time: string; end_time: string; is_online: boolean; isBooked: boolean; location: string | null }) => {
             const dateObj = new Date(s.session_date + 'T00:00:00');
             const dateStr = dateObj.toLocaleDateString('az-AZ', {
               day: 'numeric',
@@ -61,8 +68,9 @@ export default function MentorluqPage() {
               expertise: s.expertise_area ?? s.description ?? '',
               date: dateStr,
               time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
-              mode: s.is_online ? 'online' : 'offline',
               isBooked: s.isBooked,
+              is_online: s.is_online,
+              location: s.location,
             };
           })
         );
@@ -99,6 +107,30 @@ export default function MentorluqPage() {
     }
   };
 
+  const handleCancel = async (id: string) => {
+    if (!teamId) return;
+    setCancellingId(id);
+    try {
+      const res = await fetch('/api/book-session', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: id, teamId }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        alert('Xeta: ' + data.error);
+      } else {
+        setSlots((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, isBooked: false } : s))
+        );
+      }
+    } catch {
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -114,6 +146,18 @@ export default function MentorluqPage() {
           </p>
         </div>
       </div>
+
+      {teamMembers.length > 0 && (
+        <Card>
+          <CardContent className="flex items-center gap-3 py-3">
+            <Users className="size-4 text-[#0D47A1] shrink-0" />
+            <div className="text-sm">
+              <span className="text-muted-foreground">Komanda uzvleri: </span>
+              <span className="font-medium">{teamMembers.map(m => m.name).join(', ')}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {rejected ? (
         <Card className="border-red-200 bg-red-50">
@@ -170,27 +214,53 @@ export default function MentorluqPage() {
                     <span>{slot.time}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    {slot.mode === 'online' ? (
+                    {slot.is_online ? (
                       <>
                         <Monitor className="size-4 shrink-0 text-[#2EC4B6]" />
-                        <Badge variant="outline" className="border-[#2EC4B6] text-[#2EC4B6]">
-                          Onlayn
-                        </Badge>
+                        {slot.location ? (
+                          <a
+                            href={slot.location}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#0D47A1] hover:underline flex items-center gap-1"
+                          >
+                            Onlayn gorusme linki
+                            <ExternalLink className="size-3" />
+                          </a>
+                        ) : (
+                          <Badge variant="outline" className="border-[#2EC4B6] text-[#2EC4B6]">
+                            Onlayn
+                          </Badge>
+                        )}
                       </>
                     ) : (
                       <>
                         <MapPin className="size-4 shrink-0 text-[#0D47A1]" />
-                        <Badge variant="outline" className="border-[#0D47A1] text-[#0D47A1]">
-                          Oflayn
-                        </Badge>
+                        {slot.location ? (
+                          <span className="text-muted-foreground">{slot.location}</span>
+                        ) : (
+                          <Badge variant="outline" className="border-[#0D47A1] text-[#0D47A1]">
+                            Oflayn
+                          </Badge>
+                        )}
                       </>
                     )}
                   </div>
                 </div>
 
                 {slot.isBooked ? (
-                  <Button variant="outline" disabled className="w-full">
-                    Bron edilib
+                  <Button
+                    variant="outline"
+                    className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                    onClick={() => handleCancel(slot.id)}
+                    disabled={cancellingId === slot.id}
+                  >
+                    {cancellingId === slot.id ? (
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                    ) : (
+                      <X className="mr-2 size-4" />
+                    )}
+                    Bronu legv et
                   </Button>
                 ) : (
                   <Button
