@@ -86,8 +86,6 @@ export default function GirisPage() {
 
         const roleRedirects: Record<string, string> = {
           super_admin: '/idarepanel',
-          trainer: '/telminci',
-          mentor: '/mentor',
           jury: '/munsif',
           team_member: '/komanda',
         };

@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import crypto from 'crypto';
 
 function getSupabase() {
   return createClient(
@@ -13,8 +14,8 @@ function getSupabase() {
 export async function inviteMentor(data: {
   fullName: string;
   email: string;
-  password: string;
   specialty: string;
+  trainingTopic?: string;
 }) {
   const supabase = getSupabase();
 
@@ -24,9 +25,11 @@ export async function inviteMentor(data: {
     return { error: 'Bu e-poçt artıq qeydiyyatdan keçib' };
   }
 
+  const password = crypto.randomBytes(16).toString('hex');
+
   const { data: authData, error: authErr } = await supabase.auth.admin.createUser({
     email: data.email,
-    password: data.password,
+    password,
     email_confirm: true,
     user_metadata: { full_name: data.fullName },
   });
@@ -42,6 +45,7 @@ export async function inviteMentor(data: {
     email: data.email,
     full_name: data.fullName,
     expertise_area: data.specialty,
+    bio: data.trainingTopic || null,
   });
 
   const { error: roleErr } = await supabase.from('user_roles').insert({

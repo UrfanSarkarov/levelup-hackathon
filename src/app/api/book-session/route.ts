@@ -11,7 +11,8 @@ function getServiceSupabase() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId, teamId } = await request.json();
+    const body = await request.json();
+    const { sessionId, teamId } = body;
     if (!sessionId || !teamId) {
       return NextResponse.json({ error: 'sessionId ve teamId lazimdir' }, { status: 400 });
     }
@@ -60,14 +61,31 @@ export async function POST(request: NextRequest) {
     }
 
     // Create booking
-    const { error: bookError } = await supabase
-      .from('session_bookings')
-      .insert({
-        session_id: sessionId,
-        team_id: teamId,
-        booked_by: user.id,
-        status: 'confirmed',
-      });
+    const participantCount = body.participantCount ?? null;
+    const insertData: Record<string, unknown> = {
+      session_id: sessionId,
+      team_id: teamId,
+      booked_by: user.id,
+      status: 'confirmed',
+    };
+    if (participantCount) insertData.participant_count = participantCount;
+
+    let bookError: { message: string } | null = null;
+    const r1 = await supabase.from('session_bookings').insert(insertData);
+    if (r1.error) {
+      // If participant_count column doesn't exist, retry without it
+      if (r1.error.message.includes('participant_count')) {
+        const r2 = await supabase.from('session_bookings').insert({
+          session_id: sessionId,
+          team_id: teamId,
+          booked_by: user.id,
+          status: 'confirmed',
+        });
+        bookError = r2.error;
+      } else {
+        bookError = r1.error;
+      }
+    }
 
     if (bookError) {
       return NextResponse.json({ error: bookError.message }, { status: 500 });

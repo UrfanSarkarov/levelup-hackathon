@@ -30,8 +30,9 @@ import {
   Plus,
   Trash2,
   Users,
+  Pencil,
 } from 'lucide-react';
-import { createSession, deleteSession, getSessions, getHosts } from './actions';
+import { createSession, updateSession, deleteSession, getSessions, getHosts } from './actions';
 
 /* ── Types ───────────────────────────────────────────────── */
 type SessionType = 'training' | 'mentoring' | 'workshop';
@@ -40,12 +41,16 @@ interface SessionRow {
   id: string;
   title: string;
   host: string;
+  host_id: string | null;
   date: string;
+  start_time: string;
+  end_time: string;
   time: string;
   type: SessionType;
   currentAttendees: number;
   maxAttendees: number;
   location: string | null;
+  is_online: boolean;
 }
 
 const TYPE_LABELS: Record<SessionType, string> = {
@@ -66,6 +71,8 @@ export default function SessiyalarPage() {
   const [trainers, setTrainers] = useState<{id: string; name: string; email: string}[]>([]);
   const [mentors, setMentors] = useState<{id: string; name: string; email: string}[]>([]);
   const [hostId, setHostId] = useState<string>('');
+  const [editSession, setEditSession] = useState<SessionRow | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   async function loadSessions() {
     try {
@@ -115,6 +122,41 @@ export default function SessiyalarPage() {
     if (result.error) {
       alert('Xeta: ' + result.error);
     } else {
+      loadSessions();
+    }
+  }
+
+  function openEdit(session: SessionRow) {
+    setEditSession(session);
+    setSessionType(session.type);
+    setIsOnline(session.is_online);
+    setHostId(session.host_id ?? '');
+    setEditDialogOpen(true);
+  }
+
+  async function handleEdit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editSession) return;
+    setSubmitting(true);
+    const fd = new FormData(e.currentTarget);
+    const result = await updateSession(editSession.id, {
+      title: fd.get('title') as string,
+      description: fd.get('description') as string,
+      session_type: sessionType,
+      session_date: fd.get('session_date') as string,
+      start_time: fd.get('start_time') as string,
+      end_time: fd.get('end_time') as string,
+      location: fd.get('location') as string,
+      is_online: isOnline,
+      capacity: Number(fd.get('capacity')) || 25,
+      host_id: hostId || null,
+    });
+    setSubmitting(false);
+    if (result.error) {
+      alert('Xeta: ' + result.error);
+    } else {
+      setEditDialogOpen(false);
+      setEditSession(null);
       loadSessions();
     }
   }
@@ -264,6 +306,15 @@ export default function SessiyalarPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            className="h-6 w-6 p-0 text-[#0D47A1] hover:text-[#0D47A1] hover:bg-[#0D47A1]/10"
+                            onClick={() => openEdit(session)}
+                            title="Duzelis et"
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="h-6 w-6 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleDelete(session.id)}
                             title="Sil"
@@ -342,6 +393,84 @@ export default function SessiyalarPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Sessiyanı redaktə et</DialogTitle>
+            <DialogDescription>Sessiya məlumatlarını yeniləyin</DialogDescription>
+          </DialogHeader>
+          {editSession && (
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_title">Bashliq *</Label>
+                <Input id="edit_title" name="title" required defaultValue={editSession.title} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_description">Tesvir</Label>
+                <Input id="edit_description" name="description" defaultValue="" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nov *</Label>
+                  <select
+                    value={sessionType}
+                    onChange={(e) => setSessionType(e.target.value as 'training' | 'mentoring' | 'workshop')}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                  >
+                    <option value="training">Telim</option>
+                    <option value="mentoring">Mentorluq</option>
+                    <option value="workshop">Seminar</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tutum</Label>
+                  <Input name="capacity" type="number" defaultValue={editSession.maxAttendees} min={1} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{sessionType === 'mentoring' ? 'Mentor' : 'Təlimçi'}</Label>
+                <select
+                  value={hostId}
+                  onChange={(e) => setHostId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                >
+                  <option value="">Seçin...</option>
+                  {(sessionType === 'mentoring' ? mentors : trainers).map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tarix *</Label>
+                <Input name="session_date" type="date" required defaultValue={editSession.date} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Bashlama</Label>
+                  <Input name="start_time" type="time" defaultValue={editSession.start_time} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bitmə</Label>
+                  <Input name="end_time" type="time" defaultValue={editSession.end_time} />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch checked={isOnline} onCheckedChange={setIsOnline} />
+                <Label>Onlayn sessiya</Label>
+              </div>
+              <div className="space-y-2">
+                <Label>{isOnline ? 'Gorusme linki' : 'Mekan'}</Label>
+                <Input name="location" defaultValue={editSession.location ?? ''} placeholder={isOnline ? 'https://meet.google.com/...' : 'ADA Universiteti, Otaq 301'} />
+              </div>
+              <Button type="submit" className="w-full bg-[#0D47A1] hover:bg-[#0D47A1]/90" disabled={submitting}>
+                {submitting ? 'Yenilenir...' : 'Deyisiklikleri saxla'}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

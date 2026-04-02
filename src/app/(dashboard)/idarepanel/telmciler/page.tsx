@@ -23,8 +23,8 @@ interface TrainerRow {
   name: string;
   email: string;
   specialty: string;
+  trainingTopic: string;
   sessionCount: number;
-  status: 'active' | 'pending';
 }
 
 export default function TelmcilerPage() {
@@ -33,7 +33,7 @@ export default function TelmcilerPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', specialty: '' });
+  const [form, setForm] = useState({ fullName: '', email: '', specialty: '', trainingTopic: '' });
 
   const loadTrainers = async () => {
     try {
@@ -49,7 +49,7 @@ export default function TelmcilerPage() {
 
       const ids = roles.map(r => r.user_id);
       const { data: profiles } = await supabase
-        .from('profiles').select('id, full_name, email, expertise_area').in('id', ids);
+        .from('profiles').select('id, full_name, email, expertise_area, bio').in('id', ids);
 
       const { data: sessions } = await supabase
         .from('sessions').select('host_id').eq('session_type', 'training').in('host_id', ids);
@@ -59,13 +59,13 @@ export default function TelmcilerPage() {
         countMap.set(s.host_id, (countMap.get(s.host_id) ?? 0) + 1);
       });
 
-      setTrainers((profiles ?? []).map((p: { id: string; full_name: string | null; email: string; expertise_area: string | null }) => ({
+      setTrainers((profiles ?? []).map((p: { id: string; full_name: string | null; email: string; expertise_area: string | null; bio: string | null }) => ({
         id: p.id,
         name: p.full_name ?? p.email,
         email: p.email,
         specialty: p.expertise_area ?? '-',
+        trainingTopic: p.bio ?? '-',
         sessionCount: countMap.get(p.id) ?? 0,
-        status: 'active' as const,
       })));
     } catch {
       setTrainers([]);
@@ -86,7 +86,7 @@ export default function TelmcilerPage() {
       return;
     }
     setDialogOpen(false);
-    setForm({ fullName: '', email: '', password: '', specialty: '' });
+    setForm({ fullName: '', email: '', specialty: '', trainingTopic: '' });
     setSubmitting(false);
     loadTrainers();
   };
@@ -111,7 +111,7 @@ export default function TelmcilerPage() {
           </div>
           <Button className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 text-white" onClick={() => setDialogOpen(true)}>
             <UserPlus className="size-4 mr-2" />
-            Yeni təlimçi dəvət et
+            Yeni təlimçi əlavə et
           </Button>
         </div>
       </div>
@@ -119,32 +119,32 @@ export default function TelmcilerPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Yeni təlimçi dəvət et</DialogTitle>
-            <DialogDescription>Təlimçi üçün hesab yaradılacaq</DialogDescription>
+            <DialogTitle>Yeni təlimçi əlavə et</DialogTitle>
+            <DialogDescription>Təlimçi məlumatlarını daxil edin</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Ad Soyad</Label>
+              <Label>Ad Soyad *</Label>
               <Input required value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Farid Abdullayev" />
             </div>
             <div className="space-y-2">
-              <Label>E-poçt</Label>
+              <Label>E-poçt *</Label>
               <Input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="farid@mail.az" />
             </div>
             <div className="space-y-2">
-              <Label>Parol</Label>
-              <Input required type="password" minLength={6} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="Minimum 6 simvol" />
+              <Label>İxtisas sahəsi *</Label>
+              <Input required value={form.specialty} onChange={e => setForm(f => ({ ...f, specialty: e.target.value }))} placeholder="Frontend Development" />
             </div>
             <div className="space-y-2">
-              <Label>İxtisas sahəsi</Label>
-              <Input required value={form.specialty} onChange={e => setForm(f => ({ ...f, specialty: e.target.value }))} placeholder="Frontend Development" />
+              <Label>Keçəcəyi təlim mövzusu</Label>
+              <Input value={form.trainingTopic} onChange={e => setForm(f => ({ ...f, trainingTopic: e.target.value }))} placeholder="React və Next.js ilə veb tətbiq inkişafı" />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Ləğv et</Button>
               <Button type="submit" disabled={submitting} className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 text-white">
                 {submitting && <Loader2 className="size-4 mr-2 animate-spin" />}
-                Dəvət et
+                Əlavə et
               </Button>
             </div>
           </form>
@@ -168,8 +168,8 @@ export default function TelmcilerPage() {
                   <TableHead>Ad</TableHead>
                   <TableHead>E-poçt</TableHead>
                   <TableHead>İxtisas sahəsi</TableHead>
+                  <TableHead>Təlim mövzusu</TableHead>
                   <TableHead className="text-center">Sessiya sayı</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -184,8 +184,8 @@ export default function TelmcilerPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">{t.email}</TableCell>
                     <TableCell>{t.specialty}</TableCell>
+                    <TableCell className="text-muted-foreground">{t.trainingTopic}</TableCell>
                     <TableCell className="text-center">{t.sessionCount}</TableCell>
-                    <TableCell><Badge variant="default">Aktiv</Badge></TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(t.id)}><Trash2 className="size-4 text-red-500" /></Button>
                     </TableCell>

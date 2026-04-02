@@ -123,7 +123,10 @@ export async function getSessions() {
     id: s.id,
     title: s.title,
     host: s.host_id ? (hostMap.get(s.host_id) ?? '-') : '-',
+    host_id: s.host_id,
     date: s.session_date,
+    start_time: (s.start_time as string).slice(0, 5),
+    end_time: (s.end_time as string).slice(0, 5),
     time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
     type: s.session_type,
     currentAttendees: bookingCounts.get(s.id) ?? 0,
@@ -133,6 +136,44 @@ export async function getSessions() {
   }));
 
   return { sessions };
+}
+
+export async function updateSession(sessionId: string, formData: {
+  title: string;
+  description: string;
+  session_type: 'training' | 'mentoring' | 'workshop';
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  location: string;
+  is_online: boolean;
+  capacity: number;
+  host_id: string | null;
+}) {
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from('sessions')
+    .update({
+      title: formData.title,
+      description: formData.description || null,
+      session_type: formData.session_type,
+      session_date: formData.session_date,
+      start_time: formData.start_time,
+      end_time: formData.end_time,
+      location: formData.location || null,
+      is_online: formData.is_online,
+      capacity: formData.capacity,
+      host_id: formData.host_id || null,
+    })
+    .eq('id', sessionId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/idarepanel/sessiyalar');
+  return { success: true };
 }
 
 export async function getHosts() {

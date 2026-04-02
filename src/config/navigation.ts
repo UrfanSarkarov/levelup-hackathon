@@ -93,46 +93,6 @@ export const navigationItems: NavItem[] = [
     roles: ['super_admin'],
   },
 
-  // ── trainer ───────────────────────────────────────────────────────
-  {
-    title: 'İdarə Paneli',
-    href: '/telminci',
-    icon: 'LayoutDashboard',
-    roles: ['trainer'],
-  },
-  {
-    title: 'Sessiyalarım',
-    href: '/telminci/sessiyalar',
-    icon: 'CalendarDays',
-    roles: ['trainer'],
-  },
-  {
-    title: 'Profil',
-    href: '/telminci/profil',
-    icon: 'UserCircle',
-    roles: ['trainer'],
-  },
-
-  // ── mentor ────────────────────────────────────────────────────────
-  {
-    title: 'İdarə Paneli',
-    href: '/mentor',
-    icon: 'LayoutDashboard',
-    roles: ['mentor'],
-  },
-  {
-    title: 'Mentorluq Slotları',
-    href: '/mentor/slotlar',
-    icon: 'Clock',
-    roles: ['mentor'],
-  },
-  {
-    title: 'Profil',
-    href: '/mentor/profil',
-    icon: 'UserCircle',
-    roles: ['mentor'],
-  },
-
   // ── jury ──────────────────────────────────────────────────────────
   {
     title: 'İdarə Paneli',

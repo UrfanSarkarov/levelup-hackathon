@@ -23,6 +23,7 @@ interface MentorRow {
   name: string;
   email: string;
   specialty: string;
+  trainingTopic: string;
   slotCount: number;
 }
 
@@ -32,7 +33,7 @@ export default function MentorlarPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', specialty: '' });
+  const [form, setForm] = useState({ fullName: '', email: '', specialty: '', trainingTopic: '' });
 
   const loadMentors = async () => {
     try {
@@ -48,7 +49,7 @@ export default function MentorlarPage() {
 
       const ids = roles.map(r => r.user_id);
       const { data: profiles } = await supabase
-        .from('profiles').select('id, full_name, email, expertise_area').in('id', ids);
+        .from('profiles').select('id, full_name, email, expertise_area, bio').in('id', ids);
 
       const { data: sessions } = await supabase
         .from('sessions').select('host_id').eq('session_type', 'mentoring').in('host_id', ids);
@@ -58,11 +59,12 @@ export default function MentorlarPage() {
         countMap.set(s.host_id, (countMap.get(s.host_id) ?? 0) + 1);
       });
 
-      setMentors((profiles ?? []).map((p: { id: string; full_name: string | null; email: string; expertise_area: string | null }) => ({
+      setMentors((profiles ?? []).map((p: { id: string; full_name: string | null; email: string; expertise_area: string | null; bio: string | null }) => ({
         id: p.id,
         name: p.full_name ?? p.email,
         email: p.email,
         specialty: p.expertise_area ?? '-',
+        trainingTopic: p.bio ?? '-',
         slotCount: countMap.get(p.id) ?? 0,
       })));
     } catch {
@@ -84,7 +86,7 @@ export default function MentorlarPage() {
       return;
     }
     setDialogOpen(false);
-    setForm({ fullName: '', email: '', password: '', specialty: '' });
+    setForm({ fullName: '', email: '', specialty: '', trainingTopic: '' });
     setSubmitting(false);
     loadMentors();
   };
@@ -109,7 +111,7 @@ export default function MentorlarPage() {
           </div>
           <Button className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 text-white" onClick={() => setDialogOpen(true)}>
             <UserPlus className="size-4 mr-2" />
-            Yeni mentor dəvət et
+            Yeni mentor əlavə et
           </Button>
         </div>
       </div>
@@ -117,32 +119,32 @@ export default function MentorlarPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Yeni mentor dəvət et</DialogTitle>
-            <DialogDescription>Mentor üçün hesab yaradılacaq</DialogDescription>
+            <DialogTitle>Yeni mentor əlavə et</DialogTitle>
+            <DialogDescription>Mentor məlumatlarını daxil edin</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Ad Soyad</Label>
+              <Label>Ad Soyad *</Label>
               <Input required value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Kamran Rzayev" />
             </div>
             <div className="space-y-2">
-              <Label>E-poçt</Label>
+              <Label>E-poçt *</Label>
               <Input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="kamran@mail.az" />
             </div>
             <div className="space-y-2">
-              <Label>Parol</Label>
-              <Input required type="password" minLength={6} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="Minimum 6 simvol" />
+              <Label>İxtisas sahəsi *</Label>
+              <Input required value={form.specialty} onChange={e => setForm(f => ({ ...f, specialty: e.target.value }))} placeholder="Startup Strategiyası" />
             </div>
             <div className="space-y-2">
-              <Label>İxtisas sahəsi</Label>
-              <Input required value={form.specialty} onChange={e => setForm(f => ({ ...f, specialty: e.target.value }))} placeholder="Startup Strategiyası" />
+              <Label>Mentorluq mövzusu</Label>
+              <Input value={form.trainingTopic} onChange={e => setForm(f => ({ ...f, trainingTopic: e.target.value }))} placeholder="Biznes model və pitch hazırlığı" />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Ləğv et</Button>
               <Button type="submit" disabled={submitting} className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 text-white">
                 {submitting && <Loader2 className="size-4 mr-2 animate-spin" />}
-                Dəvət et
+                Əlavə et
               </Button>
             </div>
           </form>
@@ -166,8 +168,8 @@ export default function MentorlarPage() {
                   <TableHead>Ad</TableHead>
                   <TableHead>E-poçt</TableHead>
                   <TableHead>İxtisas sahəsi</TableHead>
+                  <TableHead>Mentorluq mövzusu</TableHead>
                   <TableHead className="text-center">Slot sayı</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -182,8 +184,8 @@ export default function MentorlarPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">{m.email}</TableCell>
                     <TableCell>{m.specialty}</TableCell>
+                    <TableCell className="text-muted-foreground">{m.trainingTopic}</TableCell>
                     <TableCell className="text-center">{m.slotCount}</TableCell>
-                    <TableCell><Badge variant="default">Aktiv</Badge></TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(m.id)}><Trash2 className="size-4 text-red-500" /></Button>
                     </TableCell>

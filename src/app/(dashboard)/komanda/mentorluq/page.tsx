@@ -43,6 +43,7 @@ export default function MentorluqPage() {
   const [teamId, setTeamId] = useState<string | null>(null);
   const [rejected, setRejected] = useState(false);
   const [teamMembers, setTeamMembers] = useState<{ name: string }[]>([]);
+  const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function loadSlots() {
@@ -90,7 +91,7 @@ export default function MentorluqPage() {
       const res = await fetch('/api/book-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: id, teamId }),
+        body: JSON.stringify({ sessionId: id, teamId, participantCount: participantCounts[id] || teamMembers.length }),
       });
       const data = await res.json();
 
@@ -263,16 +264,33 @@ export default function MentorluqPage() {
                     Bronu legv et
                   </Button>
                 ) : (
-                  <Button
-                    className="w-full bg-[#0D47A1] text-white hover:bg-[#0D47A1]/90"
-                    onClick={() => handleBook(slot.id)}
-                    disabled={bookingId === slot.id}
-                  >
-                    {bookingId === slot.id ? (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                    ) : null}
-                    Bron et
-                  </Button>
+                  <div className="space-y-2">
+                    {teamMembers.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Users className="size-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm text-muted-foreground shrink-0">Istirakci:</span>
+                        <select
+                          className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+                          value={participantCounts[slot.id] || teamMembers.length}
+                          onChange={(e) => setParticipantCounts(prev => ({ ...prev, [slot.id]: Number(e.target.value) }))}
+                        >
+                          {Array.from({ length: teamMembers.length }, (_, i) => i + 1).map(n => (
+                            <option key={n} value={n}>{n} / {teamMembers.length} nefer</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <Button
+                      className="w-full bg-[#0D47A1] text-white hover:bg-[#0D47A1]/90"
+                      onClick={() => handleBook(slot.id)}
+                      disabled={bookingId === slot.id}
+                    >
+                      {bookingId === slot.id ? (
+                        <Loader2 className="mr-2 size-4 animate-spin" />
+                      ) : null}
+                      Bron et
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>

@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import crypto from 'crypto';
 
 function getSupabase() {
   return createClient(
@@ -13,22 +14,23 @@ function getSupabase() {
 export async function inviteTrainer(data: {
   fullName: string;
   email: string;
-  password: string;
   specialty: string;
+  trainingTopic?: string;
 }) {
   const supabase = getSupabase();
 
-  // Check if email already exists
   const { data: existingUsers } = await supabase.auth.admin.listUsers();
   const exists = existingUsers?.users?.find(u => u.email === data.email);
   if (exists) {
     return { error: 'Bu e-poçt artıq qeydiyyatdan keçib' };
   }
 
-  // Create auth user
+  // Auto-generate password (trainer won't login)
+  const password = crypto.randomBytes(16).toString('hex');
+
   const { data: authData, error: authErr } = await supabase.auth.admin.createUser({
     email: data.email,
-    password: data.password,
+    password,
     email_confirm: true,
     user_metadata: { full_name: data.fullName },
   });
@@ -39,15 +41,14 @@ export async function inviteTrainer(data: {
 
   const userId = authData.user.id;
 
-  // Create profile
   await supabase.from('profiles').insert({
     id: userId,
     email: data.email,
     full_name: data.fullName,
     expertise_area: data.specialty,
+    bio: data.trainingTopic || null,
   });
 
-  // Assign trainer role
   const { error: roleErr } = await supabase.from('user_roles').insert({
     user_id: userId,
     role: 'trainer',
