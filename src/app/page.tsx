@@ -133,12 +133,9 @@ function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    // Fetch deadline from Supabase
-    import('@supabase/supabase-js').then(({ createClient }) => {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+    // Fetch deadline from Supabase using project client
+    import('@/lib/supabase/client').then(({ createClient }) => {
+      const supabase = createClient();
       supabase
         .from('hackathons')
         .select('registration_end')
@@ -147,7 +144,12 @@ function CountdownTimer() {
         .single()
         .then(({ data }) => {
           if (data?.registration_end) {
-            setTargetDate(new Date(data.registration_end).getTime());
+            // If stored as YYYY-MM-DD, treat as end of day
+            const dateStr = data.registration_end;
+            const target = dateStr.length === 10
+              ? new Date(dateStr + 'T23:59:59').getTime()
+              : new Date(dateStr).getTime();
+            setTargetDate(target);
           }
         });
     });

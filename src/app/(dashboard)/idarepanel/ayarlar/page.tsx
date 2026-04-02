@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { HackathonPhase } from '@/types/app.types';
+import { updateHackathonSettings } from './actions';
 
 /* -- Phase display map ---------------------------------------- */
 const PHASE_LABELS: Record<HackathonPhase, string> = {
@@ -139,28 +140,26 @@ export default function AyarlarPage() {
     setSaving(true);
     setFeedback(null);
 
-    const { error } = await supabase
-      .from('hackathons')
-      .update({
-        title: form.title,
-        description: form.description,
-        current_phase: form.current_phase,
-        max_teams: form.max_teams,
-        min_team_size: form.min_team_size,
-        max_team_size: form.max_team_size,
-        registration_start: form.registration_start || null,
-        registration_end: form.registration_end || null,
-        start_date: form.start_date || null,
-        end_date: form.end_date || null,
-      })
-      .eq('id', form.id);
+    const result = await updateHackathonSettings({
+      id: form.id,
+      title: form.title,
+      description: form.description,
+      current_phase: form.current_phase,
+      max_teams: form.max_teams,
+      min_team_size: form.min_team_size,
+      max_team_size: form.max_team_size,
+      registration_start: form.registration_start || null,
+      registration_end: form.registration_end || null,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+    });
 
     setSaving(false);
 
-    if (error) {
+    if (result.error) {
       setFeedback({
         type: 'error',
-        message: `Xeta bas verdi: ${error.message}`,
+        message: `Xeta bas verdi: ${result.error}`,
       });
     } else {
       setFeedback({
