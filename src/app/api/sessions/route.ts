@@ -18,17 +18,22 @@ export async function GET(request: NextRequest) {
 
     // Get current user's team via Supabase auth
     let myTeamId: string | null = null;
+    let teamStatus: string | null = null;
     try {
       const authClient = await createBrowserClient();
       const { data: { user } } = await authClient.auth.getUser();
       if (user) {
         const { data: membership } = await supabase
           .from('team_members')
-          .select('team_id')
+          .select('team_id, teams(status)')
           .eq('user_id', user.id)
           .limit(1)
           .single();
         myTeamId = membership?.team_id ?? null;
+        if (membership?.teams) {
+          const t = membership.teams as unknown as { status: string };
+          teamStatus = t.status;
+        }
       }
     } catch {
       // No auth user
@@ -42,7 +47,7 @@ export async function GET(request: NextRequest) {
       .order('session_date', { ascending: true });
 
     if (!sessions || sessions.length === 0) {
-      return NextResponse.json({ sessions: [], teamId: myTeamId });
+      return NextResponse.json({ sessions: [], teamId: myTeamId, teamStatus });
     }
 
     // Get booking counts
@@ -92,9 +97,9 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ sessions: result, teamId: myTeamId });
+    return NextResponse.json({ sessions: result, teamId: myTeamId, teamStatus });
   } catch (err) {
     console.error('Sessions API error:', err);
-    return NextResponse.json({ sessions: [], teamId: null });
+    return NextResponse.json({ sessions: [], teamId: null, teamStatus: null });
   }
 }

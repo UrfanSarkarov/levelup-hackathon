@@ -18,6 +18,7 @@ import {
   User,
   Users,
   Loader2,
+  XCircle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -37,6 +38,7 @@ export default function TelimlerPage() {
   const [loading, setLoading] = useState(true);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<string | null>(null);
+  const [rejected, setRejected] = useState(false);
 
   useEffect(() => {
     async function loadSessions() {
@@ -45,6 +47,7 @@ export default function TelimlerPage() {
         const data = await res.json();
 
         if (data.teamId) setTeamId(data.teamId);
+        if (data.teamStatus === 'rejected') { setRejected(true); setLoading(false); return; }
 
         setSessions(
           (data.sessions ?? []).map((s: { id: string; title: string; host_name: string | null; session_date: string; start_time: string; end_time: string; capacity: number; booked: number; isBooked: boolean }) => {
@@ -114,7 +117,17 @@ export default function TelimlerPage() {
         </div>
       </div>
 
-      {loading ? (
+      {rejected ? (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="flex items-center gap-4 py-6">
+            <XCircle className="size-8 text-red-500 shrink-0" />
+            <div>
+              <p className="font-semibold text-red-700">Bu bolmeye giris baglidir</p>
+              <p className="text-sm text-red-600">Komandaniz secilmediyi ucun telim sessiyalarina qosulmaq mumkun deyil.</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
