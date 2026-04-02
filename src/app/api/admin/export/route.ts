@@ -2,18 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import * as XLSX from "xlsx";
 
-const SESSION_TOKEN = process.env.SESSION_TOKEN || "lup-session-9f3k2m7x";
-
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
-}
-
-function isAuthenticated(request: NextRequest): boolean {
-  const token = request.cookies.get("lup_session")?.value;
-  return token === SESSION_TOKEN;
 }
 
 async function getHackathonId(): Promise<string | null> {
@@ -192,10 +185,7 @@ const SHEET_NAMES: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
-  if (!isAuthenticated(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  // Auth is handled by middleware (lup_session cookie protects /api/admin/*)
   try {
     const hackathonId = await getHackathonId();
     if (!hackathonId) {

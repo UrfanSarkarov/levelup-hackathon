@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createClient as createServerClient } from '@/lib/supabase/server';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -13,10 +12,7 @@ function getServiceSupabase() {
 
 export async function POST(request: NextRequest) {
   try {
-    const authClient = await createServerClient();
-    const { data: { user } } = await authClient.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Giris edin' }, { status: 401 });
-
+    // Auth is handled by middleware (Supabase session required)
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const teamId = formData.get('teamId') as string | null;
@@ -40,28 +36,33 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceSupabase();
 
     // Ensure bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const bucketExists = buckets?.some(b => b.name === 'submissions');
-    if (!bucketExists) {
-      await supabase.storage.createBucket('submissions', {
-        public: false,
-        fileSizeLimit: MAX_FILE_SIZE,
-      });
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(b => b.name === 'submissions');
+      if (!bucketExists) {
+        await supabase.storage.createBucket('submissions', {
+          public: false,
+          fileSizeLimit: MAX_FILE_SIZE,
+        });
+      }
+    } catch (bucketErr) {
+      console.error('Bucket check/create error:', bucketErr);
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
     const filePath = `${teamId}/${file.name}`;
 
     const { error } = await supabase.storage
       .from('submissions')
-      .upload(filePath, buffer, {
+      .upload(filePath, uint8, {
         contentType: file.type || 'application/octet-stream',
         upsert: true,
       });
 
     if (error) {
       console.error('Storage upload error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Fayl yuklenirken xeta: ' + error.message }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -70,7 +71,8 @@ export async function POST(request: NextRequest) {
       fileSize: file.size,
     });
   } catch (err) {
-    console.error('Upload error:', err);
-    return NextResponse.json({ error: 'Server xetasi: ' + (err instanceof Error ? err.message : 'Unknown') }, { status: 500 });
+    console.error('Upload route error:', err);
+    const msg = err instanceof Error ? err.message : 'Bilinmeyen xeta';
+    return NextResponse.json({ error: 'Server xetasi: ' + msg }, { status: 500 });
   }
 }

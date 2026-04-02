@@ -23,6 +23,11 @@ import {
   AlertTriangle,
   Loader2,
   Check,
+  FileText,
+  ExternalLink,
+  Globe,
+  GitBranch,
+  Video,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -110,6 +115,16 @@ export default function QiymetlendirmePage() {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [teamSubmission, setTeamSubmission] = useState<{
+    title: string;
+    description: string | null;
+    problem: string | null;
+    solution: string | null;
+    demo_url: string | null;
+    repo_url: string | null;
+    video_url: string | null;
+  } | null>(null);
+  const [teamFiles, setTeamFiles] = useState<{ name: string; url: string }[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -220,6 +235,8 @@ export default function QiymetlendirmePage() {
   async function handleSelectTeam(team: AssignedTeam) {
     setSelectedTeam(team);
     setSaveMessage(null);
+    setTeamSubmission(null);
+    setTeamFiles([]);
 
     // Initialize empty scores
     const emptyScores: Record<string, number> = {};
@@ -228,6 +245,7 @@ export default function QiymetlendirmePage() {
     });
     setScores(emptyScores);
 
+    // Load existing scores
     if (userId && activeRoundId) {
       try {
         const supabase = createClient();
@@ -248,6 +266,16 @@ export default function QiymetlendirmePage() {
       } catch {
         // scores table may not exist, keep empty scores
       }
+    }
+
+    // Load team submission & files
+    try {
+      const res = await fetch(`/api/team-submission?teamId=${team.id}`);
+      const data = await res.json();
+      if (data.submission) setTeamSubmission(data.submission);
+      if (data.files) setTeamFiles(data.files);
+    } catch {
+      // ignore
     }
   }
 
@@ -462,6 +490,86 @@ export default function QiymetlendirmePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Submission details */}
+      {selectedTeam && teamSubmission && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="size-4 text-[#0D47A1]" />
+              {teamSubmission.title || 'Teqdimat melumatlari'}
+            </CardTitle>
+            <CardDescription>{selectedTeam.name} komandasi</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {teamSubmission.description && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Tesvir</p>
+                <p className="text-sm">{teamSubmission.description}</p>
+              </div>
+            )}
+            {teamSubmission.problem && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Problem</p>
+                <p className="text-sm">{teamSubmission.problem}</p>
+              </div>
+            )}
+            {teamSubmission.solution && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Hell</p>
+                <p className="text-sm">{teamSubmission.solution}</p>
+              </div>
+            )}
+
+            {/* Links */}
+            <div className="flex flex-wrap gap-3">
+              {teamSubmission.demo_url && (
+                <a href={teamSubmission.demo_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-[#0D47A1] hover:bg-[#0D47A1]/5">
+                  <Globe className="size-3.5" /> Demo
+                  <ExternalLink className="size-3" />
+                </a>
+              )}
+              {teamSubmission.repo_url && (
+                <a href={teamSubmission.repo_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-[#0D47A1] hover:bg-[#0D47A1]/5">
+                  <GitBranch className="size-3.5" /> Repository
+                  <ExternalLink className="size-3" />
+                </a>
+              )}
+              {teamSubmission.video_url && (
+                <a href={teamSubmission.video_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-[#0D47A1] hover:bg-[#0D47A1]/5">
+                  <Video className="size-3.5" /> Video
+                  <ExternalLink className="size-3" />
+                </a>
+              )}
+            </div>
+
+            {/* Files */}
+            {teamFiles.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Yuklenmiş fayllar</p>
+                <div className="space-y-2">
+                  {teamFiles.map((f) => (
+                    <a
+                      key={f.name}
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted/50"
+                    >
+                      <FileText className="size-4 text-[#0D47A1] shrink-0" />
+                      <span className="text-[#0D47A1] hover:underline">{f.name}</span>
+                      <ExternalLink className="size-3 text-muted-foreground ml-auto" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Scoring interface */}
       <Card className={selectedTeam ? '' : 'opacity-60'}>
