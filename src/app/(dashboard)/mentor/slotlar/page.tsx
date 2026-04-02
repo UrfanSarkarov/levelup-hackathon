@@ -25,6 +25,7 @@ interface MentorSlot {
   time: string;
   duration: string;
   teamName: string | null;
+  participantCount: number;
   status: 'available' | 'booked' | 'completed';
   is_online: boolean;
   location: string | null;
@@ -57,7 +58,7 @@ export default function MentorSlotlarPage() {
         const data = await res.json();
 
         setSlots(
-          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; booked: number; teams: { teamName: string | null }[]; is_online: boolean; location: string | null }) => {
+          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; booked: number; teams: { teamName: string | null; participantCount: number }[]; is_online: boolean; location: string | null }) => {
             const dateObj = new Date(s.session_date + 'T00:00:00');
             const dateStr = dateObj.toLocaleDateString('az-AZ', { day: 'numeric', month: 'long', year: 'numeric' });
             const startTime = s.start_time.slice(0, 5);
@@ -79,6 +80,7 @@ export default function MentorSlotlarPage() {
               time: `${startTime} - ${endTime}`,
               duration: `${durationMin > 0 ? durationMin : 60} deqiqe`,
               teamName: s.teams?.[0]?.teamName ?? null,
+              participantCount: s.teams?.[0]?.participantCount ?? 1,
               status,
               is_online: s.is_online,
               location: s.location,
@@ -162,10 +164,13 @@ export default function MentorSlotlarPage() {
                         )}
                       </div>
                       {slot.teamName ? (
-                        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                        <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                           <Users className="size-3.5" />
-                          Komanda: <span className="font-medium">{slot.teamName}</span>
-                        </p>
+                          <span>Komanda: <span className="font-medium">{slot.teamName}</span></span>
+                          <span className="rounded-md border px-1.5 py-0.5 text-[10px] font-medium">
+                            {slot.participantCount} nefer
+                          </span>
+                        </div>
                       ) : (
                         <p className="mt-1 text-sm text-muted-foreground">Bron olunmayib</p>
                       )}

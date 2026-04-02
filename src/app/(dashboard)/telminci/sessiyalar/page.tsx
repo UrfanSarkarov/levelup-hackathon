@@ -27,7 +27,7 @@ interface Session {
   capacity: number;
   booked: number;
   status: 'active' | 'completed' | 'cancelled';
-  teams: { teamName: string | null }[];
+  teams: { teamName: string | null; participantCount: number }[];
   is_online: boolean;
   location: string | null;
 }
@@ -58,7 +58,7 @@ export default function TelminciSessiyalarPage() {
         const res = await fetch('/api/my-sessions?type=training');
         const data = await res.json();
         setSessions(
-          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; capacity: number; booked: number; status: string; teams: { teamName: string | null }[]; is_online: boolean; location: string | null }) => {
+          (data.sessions ?? []).map((s: { id: string; title: string; session_date: string; start_time: string; end_time: string; capacity: number; booked: number; status: string; teams: { teamName: string | null; participantCount: number }[]; is_online: boolean; location: string | null }) => {
             const dateObj = new Date(s.session_date + 'T00:00:00');
             return {
               id: s.id,
@@ -170,9 +170,18 @@ export default function TelminciSessiyalarPage() {
                         )}
                       </div>
                       {session.teams.length > 0 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Qeydiyyat: {session.teams.map(t => t.teamName).filter(Boolean).join(', ')}
-                        </p>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Qeydiyyat:</p>
+                          {session.teams.filter(t => t.teamName).map((t, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Users className="size-3" />
+                              <span className="font-medium">{t.teamName}</span>
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {t.participantCount} nefer
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>

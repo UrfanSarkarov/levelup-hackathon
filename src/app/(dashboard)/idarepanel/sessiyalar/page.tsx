@@ -51,6 +51,7 @@ interface SessionRow {
   maxAttendees: number;
   location: string | null;
   is_online: boolean;
+  bookedTeams: { teamName: string; participantCount: number }[];
 }
 
 const TYPE_LABELS: Record<SessionType, string> = {
@@ -385,6 +386,21 @@ export default function SessiyalarPage() {
                           />
                         </div>
                       </div>
+
+                      {/* Booked teams with participant count */}
+                      {session.bookedTeams && session.bookedTeams.length > 0 && (
+                        <div className="space-y-1 pt-1 border-t">
+                          <p className="text-[11px] font-medium text-muted-foreground">Bron eden komandalar:</p>
+                          {session.bookedTeams.map((t, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span className="truncate">{t.teamName}</span>
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 ml-2">
+                                {t.participantCount} nefer
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );

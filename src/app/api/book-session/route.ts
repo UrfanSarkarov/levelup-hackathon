@@ -60,32 +60,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Yer qalmayib' }, { status: 400 });
     }
 
-    // Create booking
-    const participantCount = body.participantCount ?? null;
-    const insertData: Record<string, unknown> = {
+    // Create booking with participant count
+    const participantCount = body.participantCount ?? 1;
+
+    const { error: bookError } = await supabase.from('session_bookings').insert({
       session_id: sessionId,
       team_id: teamId,
       booked_by: user.id,
       status: 'confirmed',
-    };
-    if (participantCount) insertData.participant_count = participantCount;
-
-    let bookError: { message: string } | null = null;
-    const r1 = await supabase.from('session_bookings').insert(insertData);
-    if (r1.error) {
-      // If participant_count column doesn't exist, retry without it
-      if (r1.error.message.includes('participant_count')) {
-        const r2 = await supabase.from('session_bookings').insert({
-          session_id: sessionId,
-          team_id: teamId,
-          booked_by: user.id,
-          status: 'confirmed',
-        });
-        bookError = r2.error;
-      } else {
-        bookError = r1.error;
-      }
-    }
+      participant_count: participantCount,
+    });
 
     if (bookError) {
       return NextResponse.json({ error: bookError.message }, { status: 500 });
@@ -109,7 +93,7 @@ export async function POST(request: NextRequest) {
         user_id: session.host_id,
         type: 'session_reminder',
         title: `Yeni ${typeLabel} qeydiyyati`,
-        body: `"${teamName}" komandasi "${sessionTitle}" sessiyasina qeydiyyatdan kecdi.`,
+        body: `"${teamName}" komandasi (${participantCount} nefer) "${sessionTitle}" sessiyasina qeydiyyatdan kecdi.`,
         is_read: false,
       });
     }
@@ -126,7 +110,7 @@ export async function POST(request: NextRequest) {
         user_id: r.user_id,
         type: 'session_reminder',
         title: `${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} qeydiyyati`,
-        body: `"${teamName}" komandasi "${sessionTitle}" sessiyasina yazildi.`,
+        body: `"${teamName}" komandasi (${participantCount} nefer) "${sessionTitle}" sessiyasina yazildi.`,
         is_read: false,
       }));
       await supabase.from('notifications').insert(adminNotifs);

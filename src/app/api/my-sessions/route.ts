@@ -33,20 +33,23 @@ export async function GET(request: NextRequest) {
 
     const sessionIds = sessions.map(s => s.id);
     const bookingCounts: Record<string, number> = {};
-    const bookingDetails: Record<string, { teamName: string | null }[]> = {};
+    const bookingDetails: Record<string, { teamName: string | null; participantCount: number }[]> = {};
 
     if (sessionIds.length > 0) {
       const { data: bookings } = await supabase
         .from('session_bookings')
-        .select('session_id, team_id, teams(name)')
+        .select('session_id, team_id, participant_count, teams(name)')
         .in('session_id', sessionIds)
         .eq('status', 'confirmed');
 
-      (bookings ?? []).forEach((b: { session_id: string; team_id: string; teams: unknown }) => {
+      (bookings ?? []).forEach((b: { session_id: string; team_id: string; participant_count: number | null; teams: unknown }) => {
         bookingCounts[b.session_id] = (bookingCounts[b.session_id] ?? 0) + 1;
         if (!bookingDetails[b.session_id]) bookingDetails[b.session_id] = [];
         const team = b.teams as { name: string } | null;
-        bookingDetails[b.session_id].push({ teamName: team?.name ?? null });
+        bookingDetails[b.session_id].push({
+          teamName: team?.name ?? null,
+          participantCount: b.participant_count ?? 1,
+        });
       });
     }
 

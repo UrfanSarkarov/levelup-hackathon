@@ -106,17 +106,25 @@ export async function getSessions() {
     });
   }
 
-  // Booking counts
+  // Booking counts + details
   const sessionIds = dbSessions.map(s => s.id);
   const { data: bookings } = await supabase
     .from('session_bookings')
-    .select('session_id')
+    .select('session_id, participant_count, teams(name)')
     .in('session_id', sessionIds)
     .eq('status', 'confirmed');
 
   const bookingCounts = new Map<string, number>();
-  (bookings ?? []).forEach((b: { session_id: string }) => {
+  const bookingTeams = new Map<string, { teamName: string; participantCount: number }[]>();
+
+  (bookings ?? []).forEach((b: { session_id: string; participant_count: number | null; teams: unknown }) => {
     bookingCounts.set(b.session_id, (bookingCounts.get(b.session_id) ?? 0) + 1);
+    if (!bookingTeams.has(b.session_id)) bookingTeams.set(b.session_id, []);
+    const team = b.teams as { name: string } | null;
+    bookingTeams.get(b.session_id)!.push({
+      teamName: team?.name ?? 'Namelum',
+      participantCount: b.participant_count ?? 1,
+    });
   });
 
   const sessions = dbSessions.map((s) => ({
@@ -133,6 +141,7 @@ export async function getSessions() {
     maxAttendees: s.capacity ?? 30,
     location: s.location,
     is_online: s.is_online,
+    bookedTeams: bookingTeams.get(s.id) ?? [],
   }));
 
   return { sessions };
