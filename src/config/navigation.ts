@@ -12,149 +12,189 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-// ── Flat list of every sidebar item with role access ────────────────
-
 export const navigationItems: NavItem[] = [
-  // Shared
-  {
-    title: 'İdarə Paneli',
-    href: '/dashboard',
-    icon: 'LayoutDashboard',
-    roles: ['super_admin', 'trainer', 'mentor', 'jury', 'team_member'],
-  },
-
   // ── super_admin ───────────────────────────────────────────────────
   {
+    title: 'İdarə Paneli',
+    href: '/idarepanel',
+    icon: 'LayoutDashboard',
+    roles: ['super_admin'],
+  },
+  {
     title: 'Komandalar',
-    href: '/dashboard/teams',
+    href: '/idarepanel/komandalar',
     icon: 'Users',
     roles: ['super_admin'],
   },
   {
     title: 'Təlimçilər',
-    href: '/dashboard/users/trainers',
+    href: '/idarepanel/telmciler',
     icon: 'GraduationCap',
     roles: ['super_admin'],
   },
   {
     title: 'Mentorlar',
-    href: '/dashboard/users/mentors',
+    href: '/idarepanel/mentorlar',
     icon: 'UserCheck',
     roles: ['super_admin'],
   },
   {
     title: 'Münsiflər',
-    href: '/dashboard/users/jury',
+    href: '/idarepanel/munsifler',
     icon: 'Scale',
     roles: ['super_admin'],
   },
   {
     title: 'Sessiyalar',
-    href: '/dashboard/sessions',
+    href: '/idarepanel/sessiyalar',
     icon: 'CalendarDays',
     roles: ['super_admin'],
   },
   {
-    title: 'Qiymətləndirmə',
-    href: '/dashboard/judging',
-    icon: 'ClipboardCheck',
-    roles: ['super_admin', 'jury'],
-  },
-  {
     title: 'Təqdimatlar',
-    href: '/dashboard/submissions',
+    href: '/idarepanel/teqdimatlar',
     icon: 'FileUp',
     roles: ['super_admin'],
   },
   {
     title: 'Bildirişlər',
-    href: '/dashboard/notifications',
+    href: '/idarepanel/bildirisler',
     icon: 'Bell',
-    roles: ['super_admin', 'team_member'],
+    roles: ['super_admin'],
   },
   {
     title: 'Fazalar',
-    href: '/dashboard/phases',
+    href: '/idarepanel/fazalar',
     icon: 'GitBranch',
     roles: ['super_admin'],
   },
   {
     title: 'Analitika',
-    href: '/dashboard/analytics',
+    href: '/idarepanel/analitika',
     icon: 'BarChart3',
     roles: ['super_admin'],
   },
   {
     title: 'Eksport',
-    href: '/dashboard/export',
+    href: '/idarepanel/eksport',
     icon: 'Download',
     roles: ['super_admin'],
   },
   {
     title: 'Ayarlar',
-    href: '/dashboard/settings',
+    href: '/idarepanel/ayarlar',
     icon: 'Settings',
     roles: ['super_admin'],
   },
 
   // ── trainer ───────────────────────────────────────────────────────
   {
+    title: 'İdarə Paneli',
+    href: '/telminci',
+    icon: 'LayoutDashboard',
+    roles: ['trainer'],
+  },
+  {
     title: 'Sessiyalarım',
-    href: '/dashboard/my-sessions',
+    href: '/telminci/sessiyalar',
     icon: 'CalendarDays',
+    roles: ['trainer'],
+  },
+  {
+    title: 'Profil',
+    href: '/telminci/profil',
+    icon: 'UserCircle',
     roles: ['trainer'],
   },
 
   // ── mentor ────────────────────────────────────────────────────────
   {
+    title: 'İdarə Paneli',
+    href: '/mentor',
+    icon: 'LayoutDashboard',
+    roles: ['mentor'],
+  },
+  {
     title: 'Mentorluq Slotları',
-    href: '/dashboard/mentoring-slots',
+    href: '/mentor/slotlar',
     icon: 'Clock',
     roles: ['mentor'],
+  },
+  {
+    title: 'Profil',
+    href: '/mentor/profil',
+    icon: 'UserCircle',
+    roles: ['mentor'],
+  },
+
+  // ── jury ──────────────────────────────────────────────────────────
+  {
+    title: 'İdarə Paneli',
+    href: '/munsif',
+    icon: 'LayoutDashboard',
+    roles: ['jury'],
+  },
+  {
+    title: 'Qiymətləndirmə',
+    href: '/munsif/qiymetlendirme',
+    icon: 'ClipboardCheck',
+    roles: ['jury'],
+  },
+  {
+    title: 'Profil',
+    href: '/munsif/profil',
+    icon: 'UserCircle',
+    roles: ['jury'],
   },
 
   // ── team_member ───────────────────────────────────────────────────
   {
+    title: 'İdarə Paneli',
+    href: '/komanda',
+    icon: 'LayoutDashboard',
+    roles: ['team_member'],
+  },
+  {
     title: 'Komanda Üzvləri',
-    href: '/dashboard/my-team',
+    href: '/komanda/uzvler',
     icon: 'UsersRound',
     roles: ['team_member'],
   },
   {
     title: 'Təlimlər',
-    href: '/dashboard/trainings',
+    href: '/komanda/telimler',
     icon: 'BookOpen',
     roles: ['team_member'],
   },
   {
     title: 'Mentorluq',
-    href: '/dashboard/mentoring',
+    href: '/komanda/mentorluq',
     icon: 'Handshake',
     roles: ['team_member'],
   },
   {
     title: 'Təqdimat',
-    href: '/dashboard/my-submission',
+    href: '/komanda/teqdimat',
     icon: 'FileUp',
     roles: ['team_member'],
   },
-
-  // ── Shared – Profil ──────────────────────────────────────────────
+  {
+    title: 'Bildirişlər',
+    href: '/komanda/bildirisler',
+    icon: 'Bell',
+    roles: ['team_member'],
+  },
   {
     title: 'Profil',
-    href: '/dashboard/profile',
+    href: '/komanda/profil',
     icon: 'UserCircle',
-    roles: ['trainer', 'mentor', 'jury', 'team_member'],
+    roles: ['team_member'],
   },
 ];
-
-// ── Helper: filter items visible to a given role ────────────────────
 
 export function getNavigationForRole(role: AppRole): NavItem[] {
   return navigationItems.filter((item) => item.roles.includes(role));
 }
-
-// ── Grouped navigation (for sidebar sections) ──────────────────────
 
 export function getGroupedNavigation(role: AppRole): NavGroup[] {
   const items = getNavigationForRole(role);
@@ -163,46 +203,28 @@ export function getGroupedNavigation(role: AppRole): NavGroup[] {
     return [
       {
         label: 'Əsas',
-        items: items.filter((i) =>
-          ['/dashboard'].includes(i.href),
-        ),
+        items: items.filter((i) => i.href === '/idarepanel'),
       },
       {
         label: 'İdarəetmə',
         items: items.filter((i) =>
-          [
-            '/dashboard/teams',
-            '/dashboard/users/trainers',
-            '/dashboard/users/mentors',
-            '/dashboard/users/jury',
-          ].includes(i.href),
+          ['/idarepanel/komandalar', '/idarepanel/telmciler', '/idarepanel/mentorlar', '/idarepanel/munsifler'].includes(i.href),
         ),
       },
       {
         label: 'Fəaliyyət',
         items: items.filter((i) =>
-          [
-            '/dashboard/sessions',
-            '/dashboard/judging',
-            '/dashboard/submissions',
-            '/dashboard/notifications',
-            '/dashboard/phases',
-          ].includes(i.href),
+          ['/idarepanel/sessiyalar', '/idarepanel/teqdimatlar', '/idarepanel/bildirisler', '/idarepanel/fazalar'].includes(i.href),
         ),
       },
       {
         label: 'Sistem',
         items: items.filter((i) =>
-          [
-            '/dashboard/analytics',
-            '/dashboard/export',
-            '/dashboard/settings',
-          ].includes(i.href),
+          ['/idarepanel/analitika', '/idarepanel/eksport', '/idarepanel/ayarlar'].includes(i.href),
         ),
       },
     ];
   }
 
-  // All other roles get a flat group
   return [{ label: 'Menyu', items }];
 }
