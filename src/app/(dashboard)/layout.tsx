@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type { AppRole, Profile } from '@/types/app.types';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
@@ -42,10 +42,10 @@ export default async function DashboardLayout({
     // Supabase user — fetch profile and role from DB
     let fetchedRole: AppRole = 'team_member';
     try {
-      const supabase = await createClient();
+      const serviceClient = createServiceClient();
       const [{ data: profile }, { data: roleRow }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', supabaseUser.id).single(),
-        supabase.from('user_roles').select('role').eq('user_id', supabaseUser.id).single(),
+        serviceClient.from('profiles').select('*').eq('id', supabaseUser.id).single(),
+        serviceClient.from('user_roles').select('role').eq('user_id', supabaseUser.id).single(),
       ]);
 
       if (roleRow?.role) {
