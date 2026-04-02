@@ -11,7 +11,6 @@ import {
   UserCheck,
   ClipboardList,
   Presentation,
-  AlertTriangle,
   Clock,
   CheckCircle2,
   Circle,
@@ -44,14 +43,6 @@ const PHASE_ORDER: HackathonPhase[] = [
   'archived',
 ];
 
-/* ── Mock data fallback ───────────────────────────────────── */
-const MOCK_KPI = {
-  registrations: 42,
-  activeTeams: 12,
-  participants: 58,
-  submissions: 3,
-};
-
 interface MockTeamRow {
   id: string;
   name: string;
@@ -59,16 +50,6 @@ interface MockTeamRow {
   created_at: string;
   member_count: number;
 }
-
-const MOCK_TEAMS: MockTeamRow[] = [
-  { id: '1', name: 'CodeCrafters', status: 'accepted', created_at: '2026-03-28T14:00:00Z', member_count: 4 },
-  { id: '2', name: 'InnoVision', status: 'pending', created_at: '2026-03-29T09:30:00Z', member_count: 3 },
-  { id: '3', name: 'ByteBuilders', status: 'accepted', created_at: '2026-03-30T11:15:00Z', member_count: 5 },
-  { id: '4', name: 'PixelPioneers', status: 'pending', created_at: '2026-03-31T16:45:00Z', member_count: 2 },
-  { id: '5', name: 'DataDragons', status: 'rejected', created_at: '2026-03-31T18:00:00Z', member_count: 4 },
-];
-
-const MOCK_PHASE: HackathonPhase = 'registration_open';
 
 /* ── Helper: status badge colour ──────────────────────────── */
 function statusVariant(status: Team['status']) {
@@ -103,10 +84,9 @@ function statusLabel(status: Team['status']): string {
 
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function IdarePaneliPage() {
-  let useMock = false;
-  let kpi = MOCK_KPI;
-  let recentTeams: MockTeamRow[] = MOCK_TEAMS;
-  let currentPhase: HackathonPhase = MOCK_PHASE;
+  let kpi = { registrations: 0, activeTeams: 0, participants: 0, submissions: 0 };
+  let recentTeams: MockTeamRow[] = [];
+  let currentPhase: HackathonPhase = 'draft';
 
   try {
     const supabase = createServiceClient();
@@ -173,7 +153,7 @@ export default async function IdarePaneliPage() {
       }));
     }
   } catch {
-    useMock = true;
+    // leave defaults
   }
 
   /* ── KPI cards data ───────────────────────────────────────── */
@@ -218,16 +198,6 @@ export default async function IdarePaneliPage() {
         </p>
       </div>
 
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
-
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => {
@@ -257,6 +227,11 @@ export default async function IdarePaneliPage() {
             <CardDescription>Sonuncu komanda qeydiyyatlari</CardDescription>
           </CardHeader>
           <CardContent>
+            {recentTeams.length === 0 ? (
+              <p className="py-8 text-center text-muted-foreground">
+                Hələ heç bir komanda qeydiyyatdan keçməyib
+              </p>
+            ) : (
             <div className="space-y-4">
               {recentTeams.map((team) => (
                 <div
@@ -284,6 +259,7 @@ export default async function IdarePaneliPage() {
                 </div>
               ))}
             </div>
+            )}
           </CardContent>
         </Card>
 

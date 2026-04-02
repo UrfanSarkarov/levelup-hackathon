@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { AlertTriangle, Presentation } from 'lucide-react';
+import { Presentation } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 
 /* ── Mock data ────────────────────────────────────────────── */
@@ -29,49 +29,6 @@ interface SubmissionRow {
   submittedAt: string;
 }
 
-const MOCK_SUBMISSIONS: SubmissionRow[] = [
-  {
-    id: '1',
-    teamName: 'CodeCrafters',
-    track: 'Fintech',
-    projectTitle: 'EcoTrack - Maliyye izi',
-    status: 'submitted',
-    submittedAt: '2026-04-25T14:30:00Z',
-  },
-  {
-    id: '2',
-    teamName: 'ByteBuilders',
-    track: 'HealthTech',
-    projectTitle: 'HealthHub - Saglamliq platformasi',
-    status: 'submitted',
-    submittedAt: '2026-04-26T09:15:00Z',
-  },
-  {
-    id: '3',
-    teamName: 'CloudNine',
-    track: 'EdTech',
-    projectTitle: 'EduBridge - Telim korpusu',
-    status: 'draft',
-    submittedAt: '2026-04-27T11:00:00Z',
-  },
-  {
-    id: '4',
-    teamName: 'InnoVision',
-    track: 'Fintech',
-    projectTitle: 'PayFlow - Odenis axini',
-    status: 'submitted',
-    submittedAt: '2026-04-27T16:45:00Z',
-  },
-  {
-    id: '5',
-    teamName: 'DataDragons',
-    track: 'AgriTech',
-    projectTitle: 'SmartFarm - Agilli ferma',
-    status: 'draft',
-    submittedAt: '2026-04-28T08:20:00Z',
-  },
-];
-
 /* ── Helpers ──────────────────────────────────────────────── */
 function statusVariant(status: SubmissionStatus) {
   return status === 'submitted' ? ('default' as const) : ('secondary' as const);
@@ -83,8 +40,7 @@ function statusLabel(status: SubmissionStatus): string {
 
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function TeqdimatlarPage() {
-  let useMock = false;
-  let submissions: SubmissionRow[] = MOCK_SUBMISSIONS;
+  let submissions: SubmissionRow[] = [];
 
   try {
     const supabase = createServiceClient();
@@ -120,7 +76,7 @@ export default async function TeqdimatlarPage() {
       };
     });
   } catch {
-    useMock = true;
+    // leave defaults
   }
 
   const submittedCount = submissions.filter(
@@ -143,16 +99,6 @@ export default async function TeqdimatlarPage() {
           <span>{submissions.length} teqdimat</span>
         </div>
       </div>
-
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
 
       {/* Summary badges */}
       <div className="flex flex-wrap gap-3">
@@ -186,7 +132,14 @@ export default async function TeqdimatlarPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {submissions.map((submission) => (
+              {submissions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    Hec bir teqdimat tapilmadi
+                  </TableCell>
+                </TableRow>
+              ) : (
+              submissions.map((submission) => (
                 <TableRow key={submission.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
@@ -221,7 +174,8 @@ export default async function TeqdimatlarPage() {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

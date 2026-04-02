@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface TrainingSession {
   id: string;
   title: string;
@@ -33,52 +32,9 @@ interface TrainingSession {
   isBooked: boolean;
 }
 
-const MOCK_SESSIONS: TrainingSession[] = [
-  {
-    id: '1',
-    title: 'React Advanced Patterns',
-    trainer: 'Ceyhun Huseynov',
-    date: '5 Aprel 2026',
-    time: '10:00 - 12:00',
-    capacity: 30,
-    booked: 22,
-    isBooked: true,
-  },
-  {
-    id: '2',
-    title: 'Node.js Mikroservisler',
-    trainer: 'Elnur Qasimov',
-    date: '7 Aprel 2026',
-    time: '14:00 - 16:00',
-    capacity: 25,
-    booked: 18,
-    isBooked: false,
-  },
-  {
-    id: '3',
-    title: 'UI/UX Dizayn Prinsipleri',
-    trainer: 'Gunel Ehmedova',
-    date: '9 Aprel 2026',
-    time: '11:00 - 13:00',
-    capacity: 20,
-    booked: 20,
-    isBooked: false,
-  },
-  {
-    id: '4',
-    title: 'PostgreSQL Optimallasdirma',
-    trainer: 'Rasim Ibrahimov',
-    date: '12 Aprel 2026',
-    time: '15:00 - 17:00',
-    capacity: 25,
-    booked: 8,
-    isBooked: false,
-  },
-];
-
 /* ── Page ────────────────────────────────────────────────── */
 export default function TelimlerPage() {
-  const [sessions, setSessions] = useState<TrainingSession[]>(MOCK_SESSIONS);
+  const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<string | null>(null);
@@ -112,7 +68,7 @@ export default function TelimlerPage() {
           .eq('session_type', 'training')
           .order('session_date', { ascending: true });
 
-        if (!dbSessions || dbSessions.length === 0) return;
+        if (!dbSessions || dbSessions.length === 0) { setSessions([]); return; }
 
         // Get booking counts for each session
         const sessionIds = dbSessions.map((s) => s.id);
@@ -165,7 +121,6 @@ export default function TelimlerPage() {
           })
         );
       } catch {
-        // Keep mock data as fallback
       } finally {
         setLoading(false);
       }
@@ -221,6 +176,13 @@ export default function TelimlerPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
+      ) : sessions.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <GraduationCap className="mb-3 size-12" />
+            <p className="font-medium">Hazirda movcud telim sessiyasi yoxdur</p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {sessions.map((session) => {

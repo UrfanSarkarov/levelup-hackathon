@@ -32,49 +32,6 @@ interface Notification {
   isRead: boolean;
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    title: 'Qeydiyyat tesdiq edildi',
-    body: 'Komandaniz Level UP hackathon-a ugurla qeydiyyatdan kecdi. Novbeti addimlar haqqinda melumat telim bolmesinde olacaq.',
-    type: 'success',
-    timestamp: '2026-03-31T14:30:00Z',
-    isRead: false,
-  },
-  {
-    id: '2',
-    title: 'Yeni telim sessiyasi elave edildi',
-    body: 'React Advanced Patterns telimi 5 Aprel tarixinde baslanir. Yer mehdud oldugu ucun tez bron edin.',
-    type: 'info',
-    timestamp: '2026-03-30T10:15:00Z',
-    isRead: false,
-  },
-  {
-    id: '3',
-    title: 'Mentorluq sessiyasi xatirlatmasi',
-    body: 'Kamran Resulzade ile mentorluq sessiyaniz sabah saat 10:00-da baslayir.',
-    type: 'warning',
-    timestamp: '2026-03-29T18:00:00Z',
-    isRead: false,
-  },
-  {
-    id: '4',
-    title: 'Komanda uzvu qosuldu',
-    body: 'Nigar Mammadova komandaniza qosuldu.',
-    type: 'info',
-    timestamp: '2026-03-28T11:45:00Z',
-    isRead: true,
-  },
-  {
-    id: '5',
-    title: 'Telim sessiyasi legv edildi',
-    body: 'PostgreSQL Optimallasdirma telimi texniki sebeblere gore legv edildi. Yeni tarix bildirilecek.',
-    type: 'error',
-    timestamp: '2026-03-27T09:20:00Z',
-    isRead: true,
-  },
-];
-
 /* ── Icon by type ────────────────────────────────────────── */
 function NotificationIcon({ type }: { type: Notification['type'] }) {
   switch (type) {
@@ -99,9 +56,7 @@ function normalizeType(dbType: string): Notification['type'] {
 
 /* ── Page ────────────────────────────────────────────────── */
 export default function BildirislerPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(
-    MOCK_NOTIFICATIONS
-  );
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -133,7 +88,6 @@ export default function BildirislerPage() {
           );
         }
       } catch {
-        // Keep mock data as fallback
       } finally {
         setLoading(false);
       }

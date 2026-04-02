@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -5,16 +6,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   GraduationCap,
   UserCheck,
   Send,
-  Bell,
   CheckCircle2,
   Circle,
   Clock,
-  Inbox,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import type { HackathonPhase } from '@/types/app.types';
@@ -68,31 +66,12 @@ const QUICK_ACTIONS: QuickAction[] = [
     bg: 'bg-[#6BBF6B]/10',
     href: '/komanda/teqdimat',
   },
-  {
-    title: 'Bildirisler',
-    description: 'Yeni bildirislerinize baxin',
-    icon: Bell,
-    color: 'text-amber-600',
-    bg: 'bg-amber-100',
-    href: '/komanda/bildirisler',
-  },
 ];
-
-/* ── Notification type ────────────────────────────────────── */
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  created_at: string;
-  is_read: boolean;
-}
 
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function KomandaDashboardPage() {
   let currentPhase: string = 'registration_open';
   let teamName = 'Sizin Komandaniz';
-  let notifications: Notification[] = [];
 
   try {
     const supabase = await createClient();
@@ -125,25 +104,6 @@ export default async function KomandaDashboardPage() {
 
     if (membership && typeof membership.teams === 'object' && membership.teams !== null && 'name' in membership.teams) {
       teamName = (membership.teams as { name: string }).name;
-    }
-
-    // Get notifications
-    const { data: notifs } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (notifs && notifs.length > 0) {
-      notifications = notifs.map((n) => ({
-        id: n.id,
-        title: n.title,
-        message: n.body ?? '',
-        type: n.type as Notification['type'],
-        created_at: n.created_at,
-        is_read: n.is_read,
-      }));
     }
   } catch {
     // Supabase connection failed — show empty state
@@ -226,85 +186,24 @@ export default async function KomandaDashboardPage() {
       </Card>
 
       {/* ── Quick actions ──────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {QUICK_ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
-            <Card
-              key={action.title}
-              className="cursor-pointer transition-shadow hover:shadow-md"
-            >
-              <CardHeader>
-                <div className={`w-fit rounded-lg p-2.5 ${action.bg}`}>
-                  <Icon className={`size-5 ${action.color}`} />
-                </div>
-                <CardTitle className="mt-2">{action.title}</CardTitle>
-                <CardDescription>{action.description}</CardDescription>
-              </CardHeader>
-            </Card>
+            <Link key={action.title} href={action.href}>
+              <Card className="cursor-pointer transition-shadow hover:shadow-md">
+                <CardHeader>
+                  <div className={`w-fit rounded-lg p-2.5 ${action.bg}`}>
+                    <Icon className={`size-5 ${action.color}`} />
+                  </div>
+                  <CardTitle className="mt-2">{action.title}</CardTitle>
+                  <CardDescription>{action.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
           );
         })}
       </div>
-
-      {/* ── Recent notifications ───────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Son bildirisler</CardTitle>
-          <CardDescription>
-            Sizin ucun olan bildirisler
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-              <Inbox className="mb-2 size-10" />
-              <p className="text-sm">Heç bir bildiris yoxdur</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`flex items-start gap-3 rounded-lg border p-3 ${
-                    !n.is_read ? 'bg-[#0D47A1]/5' : ''
-                  }`}
-                >
-                  <div
-                    className={`mt-0.5 size-2 shrink-0 rounded-full ${
-                      n.type === 'success'
-                        ? 'bg-[#6BBF6B]'
-                        : n.type === 'warning'
-                          ? 'bg-amber-400'
-                          : n.type === 'error'
-                            ? 'bg-red-400'
-                            : 'bg-[#0D47A1]'
-                    }`}
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium">{n.title}</p>
-                      {!n.is_read && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Yeni
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{n.message}</p>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      {new Date(n.created_at).toLocaleDateString('az-AZ', {
-                        day: 'numeric',
-                        month: 'long',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

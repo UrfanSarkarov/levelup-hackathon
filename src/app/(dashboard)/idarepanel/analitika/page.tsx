@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -23,37 +22,13 @@ import {
 } from 'recharts';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ────────────────────────────────────────────── */
-const MOCK_TRACK_DATA = [
-  { name: 'Fintech', count: 14 },
-  { name: 'EdTech', count: 11 },
-  { name: 'HealthTech', count: 9 },
-  { name: 'AgriTech', count: 8 },
-];
-
-const MOCK_TEAM_SIZE_DATA = [
-  { name: '3 uzv', value: 5 },
-  { name: '4 uzv', value: 8 },
-  { name: '5 uzv', value: 4 },
-];
-
-const MOCK_UNIVERSITY_DATA = [
-  { name: 'ADA Universiteti', count: 12 },
-  { name: 'Baki Dovlet Universiteti', count: 9 },
-  { name: 'ADNSU', count: 7 },
-  { name: 'ADIU', count: 5 },
-  { name: 'Xezer Universiteti', count: 4 },
-  { name: 'Diger', count: 5 },
-];
-
 const PIE_COLORS = ['#0D47A1', '#2EC4B6', '#6BBF6B', '#FF6B6B', '#FFA726'];
 
 /* ── Page ─────────────────────────────────────────────────── */
 export default function AnalitikaPage() {
-  const [useMock, setUseMock] = useState(true);
-  const [trackData, setTrackData] = useState(MOCK_TRACK_DATA);
-  const [teamSizeData, setTeamSizeData] = useState(MOCK_TEAM_SIZE_DATA);
-  const [universityData, setUniversityData] = useState(MOCK_UNIVERSITY_DATA);
+  const [trackData, setTrackData] = useState<{name:string;count:number}[]>([]);
+  const [teamSizeData, setTeamSizeData] = useState<{name:string;value:number}[]>([]);
+  const [universityData, setUniversityData] = useState<{name:string;count:number}[]>([]);
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -113,9 +88,8 @@ export default function AnalitikaPage() {
         if (newTrackData.length > 0) setTrackData(newTrackData);
         if (newTeamSizeData.length > 0) setTeamSizeData(newTeamSizeData);
         if (newUniData.length > 0) setUniversityData(newUniData);
-        setUseMock(false);
       } catch {
-        setUseMock(true);
+        // leave defaults
       }
     }
 
@@ -132,16 +106,6 @@ export default function AnalitikaPage() {
         </p>
       </div>
 
-      {/* Mock-data banner */}
-      {useMock && (
-      <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        <AlertTriangle className="size-4 shrink-0" />
-        <span>
-          Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-        </span>
-      </div>
-      )}
-
       {/* Charts grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Bar chart: Registrations by track */}
@@ -153,6 +117,9 @@ export default function AnalitikaPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {trackData.length === 0 ? (
+              <p className="py-8 text-center text-muted-foreground">Melumat tapilmadi</p>
+            ) : (
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -187,6 +154,7 @@ export default function AnalitikaPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            )}
           </CardContent>
         </Card>
 
@@ -199,6 +167,10 @@ export default function AnalitikaPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {teamSizeData.length === 0 ? (
+              <p className="py-8 text-center text-muted-foreground">Melumat tapilmadi</p>
+            ) : (
+            <>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -244,6 +216,8 @@ export default function AnalitikaPage() {
                 </div>
               ))}
             </div>
+            </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -257,6 +231,9 @@ export default function AnalitikaPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {universityData.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">Melumat tapilmadi</p>
+          ) : (
           <div className="space-y-3">
             {universityData.map((uni) => {
               const maxCount = Math.max(...universityData.map((u) => u.count));
@@ -280,6 +257,7 @@ export default function AnalitikaPage() {
               );
             })}
           </div>
+          )}
         </CardContent>
       </Card>
     </div>

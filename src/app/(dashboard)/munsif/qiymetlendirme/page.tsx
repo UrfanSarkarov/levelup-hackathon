@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface AssignedTeam {
   id: string;
   name: string;
@@ -34,37 +33,6 @@ interface AssignedTeam {
   scoredCriteria: number;
   totalCriteria: number;
 }
-
-const MOCK_TEAMS: AssignedTeam[] = [
-  {
-    id: '1',
-    name: 'CodeCrafters',
-    track: 'FinTech',
-    scoredCriteria: 3,
-    totalCriteria: 5,
-  },
-  {
-    id: '2',
-    name: 'InnoVision',
-    track: 'HealthTech',
-    scoredCriteria: 0,
-    totalCriteria: 5,
-  },
-  {
-    id: '3',
-    name: 'ByteBuilders',
-    track: 'EdTech',
-    scoredCriteria: 5,
-    totalCriteria: 5,
-  },
-  {
-    id: '4',
-    name: 'DataDragons',
-    track: 'AI/ML',
-    scoredCriteria: 1,
-    totalCriteria: 5,
-  },
-];
 
 interface ScoringCriterion {
   id: string;
@@ -108,9 +76,8 @@ const SCORING_CRITERIA: ScoringCriterion[] = [
 
 /* ── Page ────────────────────────────────────────────────── */
 export default function QiymetlendirmePage() {
-  const [teams, setTeams] = useState<AssignedTeam[]>(MOCK_TEAMS);
+  const [teams, setTeams] = useState<AssignedTeam[]>([]);
   const [criteria, setCriteria] = useState<ScoringCriterion[]>(SCORING_CRITERIA);
-  const [useMock, setUseMock] = useState(true);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<AssignedTeam | null>(null);
   const [scores, setScores] = useState<Record<string, number>>({});
@@ -214,9 +181,8 @@ export default function QiymetlendirmePage() {
         );
 
         setTeams(loadedTeams);
-        setUseMock(false);
       } catch {
-        setUseMock(true);
+        // Supabase error — teams remain empty
       } finally {
         setLoading(false);
       }
@@ -238,7 +204,7 @@ export default function QiymetlendirmePage() {
     });
     setScores(emptyScores);
 
-    if (!useMock && userId && activeRoundId) {
+    if (userId && activeRoundId) {
       try {
         const supabase = createClient();
         const { data: existingScores } = await supabase
@@ -271,9 +237,9 @@ export default function QiymetlendirmePage() {
     setSaving(true);
     setSaveMessage(null);
 
-    if (useMock || !userId || !activeRoundId) {
+    if (!userId || !activeRoundId) {
       setSaving(false);
-      setSaveMessage('Demo rejimdedir - melumat saxlanilmadi');
+      setSaveMessage('Istifadeci ve ya raund melumati tapilmadi');
       return;
     }
 
@@ -316,9 +282,9 @@ export default function QiymetlendirmePage() {
     setSubmitting(true);
     setSaveMessage(null);
 
-    if (useMock || !userId || !activeRoundId) {
+    if (!userId || !activeRoundId) {
       setSubmitting(false);
-      setSaveMessage('Demo rejimdedir - melumat gonderilmedi');
+      setSaveMessage('Istifadeci ve ya raund melumati tapilmadi');
       return;
     }
 
@@ -398,16 +364,6 @@ export default function QiymetlendirmePage() {
         </div>
       </div>
 
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
-
       {/* Assigned teams list */}
       <Card>
         <CardHeader>
@@ -418,6 +374,11 @@ export default function QiymetlendirmePage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {teams.length === 0 && (
+              <p className="py-8 text-center text-muted-foreground">
+                Hec bir komanda teyin olunmayib
+              </p>
+            )}
             {teams.map((team) => {
               const progressPercent = Math.round(
                 (team.scoredCriteria / team.totalCriteria) * 100

@@ -16,7 +16,6 @@ import { Textarea } from '@/components/ui/textarea';
 // native select for form reliability
 import { Separator } from '@/components/ui/separator';
 import {
-  AlertTriangle,
   Bell,
   CheckCircle2,
   Clock,
@@ -32,30 +31,6 @@ interface SentNotification {
   status: 'delivered' | 'pending';
 }
 
-const MOCK_SENT: SentNotification[] = [
-  {
-    id: '1',
-    recipient: 'Butun komandalar',
-    subject: 'Sprint merhelesi baslayir',
-    sentAt: '2026-03-31T10:00:00Z',
-    status: 'delivered',
-  },
-  {
-    id: '2',
-    recipient: 'Telimciler',
-    subject: 'Telim cedveli yenilendi',
-    sentAt: '2026-03-30T14:30:00Z',
-    status: 'delivered',
-  },
-  {
-    id: '3',
-    recipient: 'Mentorlar',
-    subject: 'Mentorluq slotlarini tesdiq edin',
-    sentAt: '2026-03-29T09:15:00Z',
-    status: 'pending',
-  },
-];
-
 const RECIPIENT_OPTIONS = [
   { value: 'all_teams', label: 'Butun komandalar' },
   { value: 'selected_teams', label: 'Secilmis komandalar' },
@@ -70,8 +45,7 @@ export default function BildirislerPage() {
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [sentNotifications, setSentNotifications] = useState<SentNotification[]>(MOCK_SENT);
-  const [useMock, setUseMock] = useState(false);
+  const [sentNotifications, setSentNotifications] = useState<SentNotification[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
   // Load sent notifications from Supabase
@@ -101,9 +75,8 @@ export default function BildirislerPage() {
           sentAt: n.created_at,
           status: 'delivered' as const,
         })));
-        setUseMock(false);
       } catch {
-        setUseMock(true);
+        // leave defaults
       } finally {
         setLoadingHistory(false);
       }
@@ -146,16 +119,6 @@ export default function BildirislerPage() {
           Istirakci ve komandalara bildiris gonderin
         </p>
       </div>
-
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
 
       {/* Send form */}
       <Card>
@@ -249,6 +212,10 @@ export default function BildirislerPage() {
         <CardContent>
           {loadingHistory ? (
             <div className="text-center py-8 text-muted-foreground">Yuklenilir...</div>
+          ) : sentNotifications.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">
+              Hələ bildiris göndərilməyib
+            </p>
           ) : (
           <div className="space-y-4">
             {sentNotifications.map((notif) => (

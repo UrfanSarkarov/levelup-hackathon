@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/dialog';
 // native select used for reliability with base-ui
 import {
-  AlertTriangle,
   Calendar,
   Clock,
   MapPin,
@@ -50,16 +49,6 @@ interface SessionRow {
   location: string | null;
 }
 
-/* ── Mock data ────────────────────────────────────────────── */
-const MOCK_SESSIONS: SessionRow[] = [
-  { id: '1', title: 'Frontend Development ile tanis olun', host: 'Farid Abdullayev', date: '2026-04-12', time: '10:00 - 12:00', type: 'training', currentAttendees: 18, maxAttendees: 25, location: 'ADA Universiteti, Otaq 301' },
-  { id: '2', title: 'Layihe planlasdirmasi', host: 'Kamran Rzayev', date: '2026-04-13', time: '14:00 - 15:30', type: 'mentoring', currentAttendees: 4, maxAttendees: 5, location: null },
-  { id: '3', title: 'API dizayni ve integrasiyasi', host: 'Orkhan Huseynov', date: '2026-04-14', time: '10:00 - 12:00', type: 'training', currentAttendees: 22, maxAttendees: 25, location: 'ADA Universiteti, Otaq 204' },
-  { id: '4', title: 'Mehsul strategiyasi meslehetleri', host: 'Narmin Ismayilova', date: '2026-04-15', time: '16:00 - 17:00', type: 'mentoring', currentAttendees: 3, maxAttendees: 5, location: null },
-  { id: '5', title: 'UI/UX dizayn prinsipleri', host: 'Gunay Mammadova', date: '2026-04-16', time: '10:00 - 13:00', type: 'training', currentAttendees: 15, maxAttendees: 30, location: 'Barama Innovation Center' },
-  { id: '6', title: 'Texniki arxitektura icmali', host: 'Vugar Mammadov', date: '2026-04-17', time: '11:00 - 12:30', type: 'mentoring', currentAttendees: 2, maxAttendees: 4, location: null },
-];
-
 const TYPE_LABELS: Record<SessionType, string> = {
   training: 'Telim',
   mentoring: 'Mentorluq',
@@ -69,7 +58,6 @@ const TYPE_LABELS: Record<SessionType, string> = {
 /* ── Page ─────────────────────────────────────────────────── */
 export default function SessiyalarPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
-  const [useMock, setUseMock] = useState(false);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -120,7 +108,6 @@ export default function SessiyalarPage() {
         maxAttendees: (s.capacity as number) ?? 30,
         location: s.is_online ? null : (s.location as string | null),
       })));
-      setUseMock(false);
     } catch {
       setSessions([]);
     } finally {
@@ -260,6 +247,10 @@ export default function SessiyalarPage() {
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               Yuklenilir...
             </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              Hec bir sessiya tapilmadi
+            </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
               {filtered.map((session) => {
@@ -286,17 +277,15 @@ export default function SessiyalarPage() {
                           >
                             {TYPE_LABELS[session.type]}
                           </Badge>
-                          {!useMock && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => handleDelete(session.id)}
-                              title="Sil"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDelete(session.id)}
+                            title="Sil"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
                         </div>
                       </div>
                       <CardDescription>{session.host}</CardDescription>

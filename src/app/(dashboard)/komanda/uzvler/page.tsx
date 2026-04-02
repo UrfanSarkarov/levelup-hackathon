@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface TeamMember {
   id: string;
   name: string;
@@ -35,57 +34,12 @@ interface TeamMember {
   isLeader: boolean;
 }
 
-const MOCK_MEMBERS: TeamMember[] = [
-  {
-    id: '1',
-    name: 'Orxan Mehdiyev',
-    role: 'Frontend Developer',
-    university: 'ADA Universiteti',
-    email: 'orxan@example.com',
-    phone: '+994 50 123 45 67',
-    initials: 'OM',
-    isLeader: true,
-  },
-  {
-    id: '2',
-    name: 'Leyla Hesenova',
-    role: 'Backend Developer',
-    university: 'ADNSU',
-    email: 'leyla@example.com',
-    phone: '+994 55 234 56 78',
-    initials: 'LH',
-    isLeader: false,
-  },
-  {
-    id: '3',
-    name: 'Tural Aliyev',
-    role: 'UI/UX Dizayner',
-    university: 'Baki Dovlet Universiteti',
-    email: 'tural@example.com',
-    phone: '+994 70 345 67 89',
-    initials: 'TA',
-    isLeader: false,
-  },
-  {
-    id: '4',
-    name: 'Nigar Mammadova',
-    role: 'Data Scientist',
-    university: 'UNEC',
-    email: 'nigar@example.com',
-    phone: '+994 77 456 78 90',
-    initials: 'NM',
-    isLeader: false,
-  },
-];
-
-const MOCK_INVITE_LINK = 'https://levelup.az/devet/abc123xyz';
-
 /* ── Page ────────────────────────────────────────────────── */
 export default function KomandaUzvlerPage() {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [members, setMembers] = useState<TeamMember[]>(MOCK_MEMBERS);
-  const [inviteLink, setInviteLink] = useState(MOCK_INVITE_LINK);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [inviteLink, setInviteLink] = useState('');
 
   useEffect(() => {
     async function loadMembers() {
@@ -148,7 +102,6 @@ export default function KomandaUzvlerPage() {
           );
         }
       } catch {
-        // Keep mock data as fallback
       } finally {
         setLoading(false);
       }
@@ -185,6 +138,13 @@ export default function KomandaUzvlerPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
+      ) : members.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Users className="mb-3 size-12" />
+            <p className="font-medium">Komanda uzvu tapilmadi</p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {members.map((member) => (

@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface MentorSlot {
   id: string;
   mentorName: string;
@@ -32,39 +31,9 @@ interface MentorSlot {
   isBooked: boolean;
 }
 
-const MOCK_SLOTS: MentorSlot[] = [
-  {
-    id: '1',
-    mentorName: 'Kamran Resulzade',
-    expertise: 'Cloud Architecture & DevOps',
-    date: '6 Aprel 2026',
-    time: '10:00 - 11:00',
-    mode: 'online',
-    isBooked: false,
-  },
-  {
-    id: '2',
-    mentorName: 'Sevda Memmedli',
-    expertise: 'Product Management & UX',
-    date: '8 Aprel 2026',
-    time: '14:00 - 15:00',
-    mode: 'offline',
-    isBooked: false,
-  },
-  {
-    id: '3',
-    mentorName: 'Farid Novruzov',
-    expertise: 'Machine Learning & AI',
-    date: '10 Aprel 2026',
-    time: '16:00 - 17:00',
-    mode: 'online',
-    isBooked: false,
-  },
-];
-
 /* ── Page ────────────────────────────────────────────────── */
 export default function MentorluqPage() {
-  const [slots, setSlots] = useState<MentorSlot[]>(MOCK_SLOTS);
+  const [slots, setSlots] = useState<MentorSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<string | null>(null);
@@ -98,7 +67,7 @@ export default function MentorluqPage() {
           .eq('session_type', 'mentoring')
           .order('session_date', { ascending: true });
 
-        if (!dbSessions || dbSessions.length === 0) return;
+        if (!dbSessions || dbSessions.length === 0) { setSlots([]); return; }
 
         // Get user's own bookings
         const sessionIds = dbSessions.map((s) => s.id);
@@ -138,7 +107,6 @@ export default function MentorluqPage() {
           })
         );
       } catch {
-        // Keep mock data as fallback
       } finally {
         setLoading(false);
       }
@@ -192,6 +160,13 @@ export default function MentorluqPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
+      ) : slots.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <UserCheck className="mb-3 size-12" />
+            <p className="font-medium">Hazirda movcud mentorluq sessiyasi yoxdur</p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {slots.map((slot) => (

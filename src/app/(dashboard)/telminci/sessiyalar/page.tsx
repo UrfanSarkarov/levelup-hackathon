@@ -18,12 +18,10 @@ import {
   Plus,
   Pencil,
   Trash2,
-  AlertTriangle,
   Loader2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface Session {
   id: string;
   title: string;
@@ -33,45 +31,6 @@ interface Session {
   booked: number;
   status: 'active' | 'completed' | 'cancelled';
 }
-
-const INITIAL_SESSIONS: Session[] = [
-  {
-    id: '1',
-    title: 'React Advanced Patterns',
-    date: '5 Aprel 2026',
-    time: '10:00 - 12:00',
-    capacity: 30,
-    booked: 22,
-    status: 'active',
-  },
-  {
-    id: '2',
-    title: 'TypeScript Best Practices',
-    date: '10 Aprel 2026',
-    time: '14:00 - 16:00',
-    capacity: 25,
-    booked: 15,
-    status: 'active',
-  },
-  {
-    id: '3',
-    title: 'Next.js Server Components',
-    date: '28 Mart 2026',
-    time: '11:00 - 13:00',
-    capacity: 20,
-    booked: 20,
-    status: 'completed',
-  },
-  {
-    id: '4',
-    title: 'CSS Architecture',
-    date: '25 Mart 2026',
-    time: '15:00 - 17:00',
-    capacity: 25,
-    booked: 0,
-    status: 'cancelled',
-  },
-];
 
 function statusLabel(status: Session['status']): string {
   switch (status) {
@@ -97,8 +56,7 @@ function statusColor(status: Session['status']): string {
 
 /* ── Page ────────────────────────────────────────────────── */
 export default function TelminciSessiyalarPage() {
-  const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
-  const [useMock, setUseMock] = useState(true);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -157,9 +115,8 @@ export default function TelminciSessiyalarPage() {
         });
 
         setSessions(mapped);
-        setUseMock(false);
       } catch {
-        // Keep INITIAL_SESSIONS as fallback
+        // Supabase error — sessions remain empty
       } finally {
         setLoading(false);
       }
@@ -174,19 +131,17 @@ export default function TelminciSessiyalarPage() {
       prev.map((s) => (s.id === id ? { ...s, status: 'cancelled' as const } : s))
     );
 
-    if (!useMock) {
-      try {
-        const supabase = createClient();
-        await supabase
-          .from('sessions')
-          .update({ status: 'cancelled' })
-          .eq('id', id);
-      } catch {
-        // Revert on failure
-        setSessions((prev) =>
-          prev.map((s) => (s.id === id ? { ...s, status: 'active' as const } : s))
-        );
-      }
+    try {
+      const supabase = createClient();
+      await supabase
+        .from('sessions')
+        .update({ status: 'cancelled' })
+        .eq('id', id);
+    } catch {
+      // Revert on failure
+      setSessions((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: 'active' as const } : s))
+      );
     }
   };
 
@@ -213,21 +168,15 @@ export default function TelminciSessiyalarPage() {
         </Button>
       </div>
 
-      {/* Mock-data banner */}
-      {useMock && !loading && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
-
       {/* Sessions list */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
+      ) : sessions.length === 0 ? (
+        <p className="py-8 text-center text-muted-foreground">
+          Hec bir sessiya tapilmadi
+        </p>
       ) : (
         <div className="space-y-4">
           {sessions.map((session) => (

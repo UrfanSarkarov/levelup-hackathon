@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, AlertTriangle, Search } from 'lucide-react';
+import { Users, Search } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 import type { TeamStatus } from '@/types/app.types';
 import { TeamActions } from './team-actions';
@@ -30,72 +30,6 @@ interface TeamRow {
   member_count: number;
   captain: string;
 }
-
-const MOCK_TEAMS: TeamRow[] = [
-  {
-    id: '1',
-    name: 'CodeCrafters',
-    status: 'accepted',
-    created_at: '2026-03-28T14:00:00Z',
-    project_title: 'EcoTrack',
-    member_count: 4,
-    captain: 'Elvin Memmedov',
-  },
-  {
-    id: '2',
-    name: 'InnoVision',
-    status: 'pending',
-    created_at: '2026-03-29T09:30:00Z',
-    project_title: null,
-    member_count: 3,
-    captain: 'Nigar Huseynova',
-  },
-  {
-    id: '3',
-    name: 'ByteBuilders',
-    status: 'accepted',
-    created_at: '2026-03-30T11:15:00Z',
-    project_title: 'HealthHub',
-    member_count: 5,
-    captain: 'Ruslan Aliyev',
-  },
-  {
-    id: '4',
-    name: 'PixelPioneers',
-    status: 'pending',
-    created_at: '2026-03-31T16:45:00Z',
-    project_title: null,
-    member_count: 2,
-    captain: 'Leyla Qasimova',
-  },
-  {
-    id: '5',
-    name: 'DataDragons',
-    status: 'rejected',
-    created_at: '2026-03-31T18:00:00Z',
-    project_title: 'SmartFarm',
-    member_count: 4,
-    captain: 'Tural Hasanov',
-  },
-  {
-    id: '6',
-    name: 'CloudNine',
-    status: 'accepted',
-    created_at: '2026-03-27T10:00:00Z',
-    project_title: 'EduBridge',
-    member_count: 3,
-    captain: 'Kamran Rzayev',
-  },
-  {
-    id: '7',
-    name: 'AlgoStars',
-    status: 'pending',
-    created_at: '2026-04-01T08:20:00Z',
-    project_title: null,
-    member_count: 4,
-    captain: 'Aysel Maharramova',
-  },
-];
 
 /* ── Helpers ──────────────────────────────────────────────── */
 function statusVariant(status: TeamStatus) {
@@ -130,8 +64,7 @@ function statusLabel(status: TeamStatus): string {
 
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function KomandalarPage() {
-  let useMock = false;
-  let teams: TeamRow[] = MOCK_TEAMS;
+  let teams: TeamRow[] = [];
 
   try {
     const supabase = createServiceClient();
@@ -174,7 +107,7 @@ export default async function KomandalarPage() {
       };
     });
   } catch {
-    useMock = true;
+    // leave defaults
   }
 
   const counts = {
@@ -199,16 +132,6 @@ export default async function KomandalarPage() {
           <span>{counts.total} komanda</span>
         </div>
       </div>
-
-      {/* Mock-data banner */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-          </span>
-        </div>
-      )}
 
       {/* Summary badges */}
       <div className="flex flex-wrap gap-3">
@@ -258,7 +181,14 @@ export default async function KomandalarPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teams.map((team) => (
+              {teams.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Hec bir komanda tapilmadi
+                  </TableCell>
+                </TableRow>
+              ) : (
+              teams.map((team) => (
                 <TableRow key={team.id}>
                   <TableCell className="font-medium">{team.name}</TableCell>
                   <TableCell>{team.captain}</TableCell>
@@ -284,7 +214,8 @@ export default async function KomandalarPage() {
                     <TeamActions teamId={team.id} status={team.status} />
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

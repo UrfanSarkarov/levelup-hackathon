@@ -17,11 +17,9 @@ import {
   Timer,
   Users,
   Plus,
-  AlertTriangle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Mock data ───────────────────────────────────────────── */
 interface MentorSlot {
   id: string;
   date: string;
@@ -30,49 +28,6 @@ interface MentorSlot {
   teamName: string | null;
   status: 'available' | 'booked' | 'completed';
 }
-
-const MOCK_SLOTS: MentorSlot[] = [
-  {
-    id: '1',
-    date: '6 Aprel 2026',
-    time: '10:00 - 11:00',
-    duration: '60 deqiqe',
-    teamName: 'CodeCrafters',
-    status: 'booked',
-  },
-  {
-    id: '2',
-    date: '8 Aprel 2026',
-    time: '14:00 - 15:00',
-    duration: '60 deqiqe',
-    teamName: null,
-    status: 'available',
-  },
-  {
-    id: '3',
-    date: '10 Aprel 2026',
-    time: '16:00 - 17:00',
-    duration: '60 deqiqe',
-    teamName: 'InnoVision',
-    status: 'booked',
-  },
-  {
-    id: '4',
-    date: '2 Aprel 2026',
-    time: '11:00 - 12:00',
-    duration: '60 deqiqe',
-    teamName: 'ByteBuilders',
-    status: 'completed',
-  },
-  {
-    id: '5',
-    date: '12 Aprel 2026',
-    time: '15:00 - 16:00',
-    duration: '60 deqiqe',
-    teamName: null,
-    status: 'available',
-  },
-];
 
 function statusLabel(status: MentorSlot['status']): string {
   switch (status) {
@@ -98,8 +53,7 @@ function statusColor(status: MentorSlot['status']): string {
 
 /* ── Page ────────────────────────────────────────────────── */
 export default function MentorSlotlarPage() {
-  const [slots, setSlots] = useState<MentorSlot[]>(MOCK_SLOTS);
-  const [useMock, setUseMock] = useState(true);
+  const [slots, setSlots] = useState<MentorSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -112,14 +66,13 @@ export default function MentorSlotlarPage() {
         const { data: sessions, error } = await supabase
           .from('sessions')
           .select('*')
-          .eq('trainer_id', user.id)
+          .eq('host_id', user.id)
           .eq('session_type', 'mentoring')
-          .order('scheduled_date', { ascending: true });
+          .order('session_date', { ascending: true });
 
         if (error) throw error;
         if (!sessions) {
           setSlots([]);
-          setUseMock(false);
           return;
         }
 
@@ -128,7 +81,7 @@ export default function MentorSlotlarPage() {
         for (const session of sessions) {
           const startTime = session.start_time?.slice(0, 5) || '00:00';
           const endTime = session.end_time?.slice(0, 5) || '00:00';
-          const dateObj = new Date(session.scheduled_date);
+          const dateObj = new Date(session.session_date);
           const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
             'Iyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
           const dateStr = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
@@ -168,7 +121,7 @@ export default function MentorSlotlarPage() {
 
           // Determine status
           const now = new Date();
-          const sessionDate = new Date(session.scheduled_date);
+          const sessionDate = new Date(session.session_date);
           let status: MentorSlot['status'] = 'available';
           if (isBooked && sessionDate < now) {
             status = 'completed';
@@ -187,9 +140,8 @@ export default function MentorSlotlarPage() {
         }
 
         setSlots(mappedSlots);
-        setUseMock(false);
       } catch {
-        // Keep mock data on error
+        // Supabase error — slots remain empty
       } finally {
         setLoading(false);
       }
@@ -207,14 +159,6 @@ export default function MentorSlotlarPage() {
 
   return (
     <div className="space-y-6">
-      {/* Mock-data warning */}
-      {useMock && (
-        <div className="flex items-center gap-2 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
-          <AlertTriangle className="size-4 shrink-0" />
-          <span>Supabase-a qosula bilmedi. Mock data gosterilir.</span>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
