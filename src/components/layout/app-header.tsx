@@ -79,9 +79,33 @@ export function AppHeader({ profile }: AppHeaderProps) {
   const segments = pathname.split('/').filter(Boolean);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Admin cookie users have no Supabase session
+    }
+    // Clear admin cookie
+    document.cookie = 'lup_session=; path=/; max-age=0';
     router.push('/giris');
+  };
+
+  const role = profile.role ?? 'team_member';
+
+  const notificationPath: Record<string, string> = {
+    super_admin: '/idarepanel/bildirisler',
+    team_member: '/komanda/bildirisler',
+    trainer: '/telminci',
+    mentor: '/mentor',
+    jury: '/munsif',
+  };
+
+  const profilePath: Record<string, string> = {
+    super_admin: '/idarepanel/ayarlar',
+    trainer: '/telminci/profil',
+    mentor: '/mentor/profil',
+    jury: '/munsif/profil',
+    team_member: '/komanda/profil',
   };
 
   return (
@@ -122,17 +146,10 @@ export function AppHeader({ profile }: AppHeaderProps) {
           variant="ghost"
           size="icon-sm"
           className="relative"
-          onClick={() => router.push('/idarepanel/bildirisler')}
+          onClick={() => router.push(notificationPath[role] || '/komanda/bildirisler')}
           aria-label="Bildirisler"
         >
           <Bell className="size-4" />
-          {/* Unread count badge */}
-          <Badge
-            variant="destructive"
-            className="absolute -top-1 -right-1 flex size-4 items-center justify-center p-0 text-[10px]"
-          >
-            0
-          </Badge>
         </Button>
 
         {/* User avatar dropdown */}
@@ -163,28 +180,20 @@ export function AppHeader({ profile }: AppHeaderProps) {
 
             <DropdownMenuGroup>
               <DropdownMenuItem
-                onClick={() => {
-                  const role = profile.role;
-                  const profilePaths: Record<string, string> = {
-                    super_admin: '/idarepanel/ayarlar',
-                    trainer: '/telminci/profil',
-                    mentor: '/mentor/profil',
-                    jury: '/munsif/profil',
-                    team_member: '/komanda/profil',
-                  };
-                  router.push(profilePaths[role] || '/komanda/profil');
-                }}
+                onClick={() => router.push(profilePath[role] || '/komanda/profil')}
               >
                 <User className="mr-2 size-4" />
                 <span>Profil</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={() => router.push('/idarepanel/ayarlar')}
-              >
-                <Settings className="mr-2 size-4" />
-                <span>Ayarlar</span>
-              </DropdownMenuItem>
+              {role === 'super_admin' && (
+                <DropdownMenuItem
+                  onClick={() => router.push('/idarepanel/ayarlar')}
+                >
+                  <Settings className="mr-2 size-4" />
+                  <span>Ayarlar</span>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
