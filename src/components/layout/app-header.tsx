@@ -30,27 +30,29 @@ import {
 
 // ── Azerbaijani breadcrumb labels ────────────────────────────────────
 const segmentLabels: Record<string, string> = {
-  dashboard: 'Ana Sehife',
-  teams: 'Komandalar',
-  trainers: 'Telimciler',
-  mentors: 'Mentorlar',
-  jury: 'Munsifler',
-  sessions: 'Sessiyalar',
-  judging: 'Qiymetlendirme',
-  submissions: 'Teqdimatlar',
-  notifications: 'Bildirisler',
-  phases: 'Fazalar',
-  analytics: 'Analitika',
-  export: 'Eksport',
-  settings: 'Ayarlar',
-  profile: 'Profil',
-  users: 'Istifadeciler',
-  'my-sessions': 'Sessiyalarim',
-  'mentoring-slots': 'Mentorluq Slotlari',
-  'my-team': 'Komanda Uzvleri',
-  trainings: 'Telimler',
-  mentoring: 'Mentorluq',
-  'my-submission': 'Teqdimat',
+  idarepanel: 'İdarə Paneli',
+  komandalar: 'Komandalar',
+  telmciler: 'Təlimçilər',
+  mentorlar: 'Mentorlar',
+  munsifler: 'Münsiflər',
+  sessiyalar: 'Sessiyalar',
+  qiymetlendirme: 'Qiymətləndirmə',
+  teqdimatlar: 'Təqdimatlar',
+  bildirisler: 'Bildirişlər',
+  fazalar: 'Fazalar',
+  analitika: 'Analitika',
+  eksport: 'Eksport',
+  ayarlar: 'Ayarlar',
+  profil: 'Profil',
+  komanda: 'Komanda',
+  uzvler: 'Üzvlər',
+  telimler: 'Təlimlər',
+  mentorluq: 'Mentorluq',
+  teqdimat: 'Təqdimat',
+  telminci: 'Təlimçi',
+  mentor: 'Mentor',
+  munsif: 'Münsif',
+  slotlar: 'Slotlar',
 };
 
 // ── Initials helper ──────────────────────────────────────────────────
@@ -120,7 +122,7 @@ export function AppHeader({ profile }: AppHeaderProps) {
           variant="ghost"
           size="icon-sm"
           className="relative"
-          onClick={() => router.push('/dashboard/notifications')}
+          onClick={() => router.push('/idarepanel/bildirisler')}
           aria-label="Bildirisler"
         >
           <Bell className="size-4" />
@@ -161,14 +163,24 @@ export function AppHeader({ profile }: AppHeaderProps) {
 
             <DropdownMenuGroup>
               <DropdownMenuItem
-                onClick={() => router.push('/dashboard/profile')}
+                onClick={() => {
+                  const role = profile.role;
+                  const profilePaths: Record<string, string> = {
+                    super_admin: '/idarepanel/ayarlar',
+                    trainer: '/telminci/profil',
+                    mentor: '/mentor/profil',
+                    jury: '/munsif/profil',
+                    team_member: '/komanda/profil',
+                  };
+                  router.push(profilePaths[role] || '/komanda/profil');
+                }}
               >
                 <User className="mr-2 size-4" />
                 <span>Profil</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                onClick={() => router.push('/dashboard/settings')}
+                onClick={() => router.push('/idarepanel/ayarlar')}
               >
                 <Settings className="mr-2 size-4" />
                 <span>Ayarlar</span>

@@ -84,7 +84,7 @@ export function AppSidebar({ profile, role }: AppSidebarProps) {
             <SidebarMenuButton
               size="lg"
               tooltip="Level UP"
-              render={<Link href="/dashboard" />}
+              render={<Link href={role === 'super_admin' ? '/idarepanel' : role === 'trainer' ? '/telminci' : role === 'mentor' ? '/mentor' : role === 'jury' ? '/munsif' : '/komanda'} />}
             >
               <div className="flex size-8 items-center justify-center rounded-lg bg-[#0D47A1] text-white">
                 <Zap className="size-4" />
@@ -113,7 +113,7 @@ export function AppSidebar({ profile, role }: AppSidebarProps) {
                   const Icon = getIcon(item.icon);
                   const isActive =
                     pathname === item.href ||
-                    (item.href !== '/dashboard' &&
+                    (item.href !== '/idarepanel' && item.href !== '/komanda' && item.href !== '/telminci' && item.href !== '/mentor' && item.href !== '/munsif' &&
                       pathname.startsWith(item.href));
 
                   return (
