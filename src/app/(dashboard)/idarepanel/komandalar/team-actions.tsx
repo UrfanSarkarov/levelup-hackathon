@@ -3,17 +3,31 @@
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, X, Undo2, Loader2, Trophy } from 'lucide-react';
-import { updateTeamStatus } from './actions';
+import { updateTeamStatus, addTeamToFinalist, removeTeamFromFinalist } from './actions';
 
-export function TeamActions({ teamId, status, canReview }: { teamId: string; status: string; canReview: boolean }) {
+export function TeamActions({ teamId, status, canReview, isFinalist }: {
+  teamId: string; status: string; canReview: boolean; isFinalist?: boolean;
+}) {
   const [isPending, startTransition] = useTransition();
 
-  function handle(newStatus: 'accepted' | 'rejected' | 'pending' | 'finalist') {
+  function handleStatus(newStatus: 'accepted' | 'rejected' | 'pending') {
     startTransition(async () => {
       const result = await updateTeamStatus(teamId, newStatus);
-      if (result.error) {
-        alert('Xeta: ' + result.error);
-      }
+      if (result.error) alert('Xeta: ' + result.error);
+    });
+  }
+
+  function handleFinalist() {
+    startTransition(async () => {
+      const result = await addTeamToFinalist(teamId);
+      if (result.error) alert(result.error);
+    });
+  }
+
+  function handleRemoveFinalist() {
+    startTransition(async () => {
+      const result = await removeTeamFromFinalist(teamId);
+      if (result.error) alert(result.error);
     });
   }
 
@@ -23,18 +37,16 @@ export function TeamActions({ teamId, status, canReview }: { teamId: string; sta
 
   if (status === 'pending') {
     if (!canReview) {
-      return (
-        <span className="text-xs text-muted-foreground">Qeydiyyat baglanandan sonra</span>
-      );
+      return <span className="text-xs text-muted-foreground">Qeydiyyat baglanandan sonra</span>;
     }
     return (
       <div className="flex gap-1">
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-          onClick={() => handle('accepted')} title="Qebul et">
+          onClick={() => handleStatus('accepted')} title="Qebul et">
           <Check className="size-3.5" />
         </Button>
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={() => handle('rejected')} title="Redd et">
+          onClick={() => handleStatus('rejected')} title="Redd et">
           <X className="size-3.5" />
         </Button>
       </div>
@@ -44,33 +56,31 @@ export function TeamActions({ teamId, status, canReview }: { teamId: string; sta
   if (status === 'accepted') {
     return (
       <div className="flex gap-1">
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-          onClick={() => handle('finalist')} title="Finala kecir">
-          <Trophy className="size-3.5 mr-1" />
-          <span className="text-xs">Final</span>
-        </Button>
+        {isFinalist ? (
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+            onClick={handleRemoveFinalist} title="Finaldan cixar">
+            <Trophy className="size-3.5 mr-1 fill-amber-500" />
+            <span className="text-xs">Finalist</span>
+          </Button>
+        ) : (
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+            onClick={handleFinalist} title="Finala kecir">
+            <Trophy className="size-3.5 mr-1" />
+            <span className="text-xs">Final</span>
+          </Button>
+        )}
         <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:text-foreground"
-          onClick={() => handle('pending')} title="Geri qaytar">
+          onClick={() => handleStatus('pending')} title="Geri qaytar">
           <Undo2 className="size-3.5" />
         </Button>
       </div>
     );
   }
 
-  if (status === 'finalist') {
-    return (
-      <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:text-foreground"
-        onClick={() => handle('accepted')} title="Finalistden cixar">
-        <Undo2 className="size-3.5 mr-1" />
-        <span className="text-xs">Geri</span>
-      </Button>
-    );
-  }
-
   if (status === 'rejected') {
     return (
       <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:text-foreground"
-        onClick={() => handle('pending')} title="Geri qaytar">
+        onClick={() => handleStatus('pending')} title="Geri qaytar">
         <Undo2 className="size-3.5 mr-1" />
         <span className="text-xs">Geri</span>
       </Button>

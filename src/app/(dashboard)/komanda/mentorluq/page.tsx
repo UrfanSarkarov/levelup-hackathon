@@ -52,7 +52,7 @@ export default function MentorluqPage() {
         const data = await res.json();
 
         if (data.teamId) setTeamId(data.teamId);
-        if (data.teamStatus !== 'accepted' && data.teamStatus !== 'finalist') { setRejected(true); setLoading(false); return; }
+        if (data.teamStatus !== 'accepted') { setRejected(true); setLoading(false); return; }
         if (data.teamMembers) setTeamMembers(data.teamMembers);
 
         setSlots(

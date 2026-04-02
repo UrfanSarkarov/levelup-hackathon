@@ -12,7 +12,7 @@ function getSupabase() {
 
 export async function updateTeamStatus(
   teamId: string,
-  status: 'accepted' | 'rejected' | 'pending' | 'finalist',
+  status: 'accepted' | 'rejected' | 'pending',
 ) {
   const supabase = getSupabase();
 
@@ -26,7 +26,7 @@ export async function updateTeamStatus(
   }
 
   // Send notification to team members
-  if (status === 'accepted' || status === 'rejected' || status === 'finalist') {
+  if (status === 'accepted' || status === 'rejected') {
     try {
       // Get team name
       const { data: team } = await supabase
@@ -42,20 +42,16 @@ export async function updateTeamStatus(
         .eq('team_id', teamId);
 
       const title =
-        status === 'finalist'
-          ? 'Komandaniz finala kecdi!'
-          : status === 'accepted'
-            ? 'Komandaniz qebul edildi!'
-            : 'Komandaniz secilmedi';
+        status === 'accepted'
+          ? 'Komandaniz qebul edildi!'
+          : 'Komandaniz secilmedi';
 
       const body =
-        status === 'finalist'
-          ? `"${team?.name ?? ''}" komandasi finala kecdi. Tebriklər! Sprint merhelesine hazirlasin!`
-          : status === 'accepted'
-            ? `"${team?.name ?? ''}" komandasi Level UP hackathon-a qebul edildi. Novbeti merehele ucun hazirlasin!`
-            : `"${team?.name ?? ''}" komandasi bu defe secilmedi. Gelecek tedbirlerde gormek umidi ile!`;
+        status === 'accepted'
+          ? `"${team?.name ?? ''}" komandasi Level UP hackathon-a qebul edildi. Novbeti merehele ucun hazirlasin!`
+          : `"${team?.name ?? ''}" komandasi bu defe secilmedi. Gelecek tedbirlerde gormek umidi ile!`;
 
-      const notifType = status === 'finalist' ? 'team_update' : status === 'accepted' ? 'team_update' : 'warning';
+      const notifType = status === 'accepted' ? 'team_update' : 'warning';
 
       // Send notification to each member who has a linked user_id
       const notifications = (members ?? [])
@@ -145,4 +141,113 @@ export async function bulkRejectUnselected() {
   revalidatePath('/idarepanel/komandalar');
   revalidatePath('/idarepanel');
   return { success: true, count: pendingTeams.length };
+}
+
+// Add team to active judging round (finalist)
+export async function addTeamToFinalist(teamId: string) {
+  const supabase = getSupabase();
+
+  // Get active judging round
+  const { data: round } = await supabase
+    .from('judging_rounds')
+    .select('id')
+    .eq('is_active', true)
+    .limit(1)
+    .single();
+
+  if (!round) {
+    return { error: 'Aktiv qiymetlendirme raundu yoxdur. Evvelce Munsifler bolmesinden raund yaradin.' };
+  }
+
+  // Check if already assigned
+  const { data: existing } = await supabase
+    .from('judge_assignments')
+    .select('id')
+    .eq('round_id', round.id)
+    .eq('team_id', teamId)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return { error: 'Bu komanda artiq finala elave edilib' };
+  }
+
+  // Get all judges
+  const { data: judges } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', 'jury');
+
+  if (!judges || judges.length === 0) {
+    return { error: 'Hec bir munsif tapilmadi' };
+  }
+
+  // Assign team to all judges
+  const assignments = judges.map(j => ({
+    round_id: round.id,
+    judge_id: j.user_id,
+    team_id: teamId,
+    is_completed: false,
+  }));
+
+  const { error } = await supabase.from('judge_assignments').insert(assignments);
+  if (error) return { error: error.message };
+
+  // Get hackathon for notification
+  const { data: hackathon } = await supabase
+    .from('hackathons')
+    .select('id')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  // Notify team members
+  try {
+    const { data: team } = await supabase.from('teams').select('name').eq('id', teamId).single();
+    const { data: members } = await supabase
+      .from('team_members')
+      .select('user_id')
+      .eq('team_id', teamId)
+      .not('user_id', 'is', null);
+
+    const notifications = (members ?? []).map((m: { user_id: string }) => ({
+      hackathon_id: hackathon?.id,
+      user_id: m.user_id,
+      type: 'team_update',
+      title: 'Komandaniz finala kecdi!',
+      body: `"${team?.name ?? ''}" komandasi finala kecdi. Tebriklər! Sprint merhelesine hazirlasin!`,
+      is_read: false,
+    }));
+
+    if (notifications.length > 0) {
+      await supabase.from('notifications').insert(notifications);
+    }
+  } catch { /* ignore */ }
+
+  revalidatePath('/idarepanel/komandalar');
+  revalidatePath('/idarepanel/qiymetlendirme');
+  return { success: true };
+}
+
+// Remove team from active judging round
+export async function removeTeamFromFinalist(teamId: string) {
+  const supabase = getSupabase();
+
+  const { data: round } = await supabase
+    .from('judging_rounds')
+    .select('id')
+    .eq('is_active', true)
+    .limit(1)
+    .single();
+
+  if (!round) return { error: 'Aktiv raund yoxdur' };
+
+  await supabase
+    .from('judge_assignments')
+    .delete()
+    .eq('round_id', round.id)
+    .eq('team_id', teamId);
+
+  revalidatePath('/idarepanel/komandalar');
+  revalidatePath('/idarepanel/qiymetlendirme');
+  return { success: true };
 }

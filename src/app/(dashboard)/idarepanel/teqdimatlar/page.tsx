@@ -29,6 +29,7 @@ interface SubmissionRow {
   submittedAt: string;
   demoUrl: string | null;
   repoUrl: string | null;
+  presentationUrl: string | null;
   files: { name: string; url: string }[];
 }
 
@@ -57,7 +58,7 @@ export default async function TeqdimatlarPage() {
 
     const { data: dbSubs, error: sErr } = await supabase
       .from('submissions')
-      .select('id, title, is_draft, submitted_at, created_at, demo_url, repo_url, team_id, teams(name, track)')
+      .select('id, title, is_draft, submitted_at, created_at, demo_url, repo_url, presentation_url, team_id, teams(name, track)')
       .eq('hackathon_id', hackathon.id)
       .order('created_at', { ascending: false });
 
@@ -88,7 +89,7 @@ export default async function TeqdimatlarPage() {
       }
     }
 
-    submissions = dbSubs.map((s: { id: string; title: string; is_draft: boolean; submitted_at: string | null; created_at: string; demo_url: string | null; repo_url: string | null; team_id: string; teams: { name: string; track: string | null }[] | { name: string; track: string | null } | null }) => {
+    submissions = dbSubs.map((s: { id: string; title: string; is_draft: boolean; submitted_at: string | null; created_at: string; demo_url: string | null; repo_url: string | null; presentation_url?: string | null; team_id: string; teams: { name: string; track: string | null }[] | { name: string; track: string | null } | null }) => {
       const teamObj = Array.isArray(s.teams) ? s.teams[0] : s.teams;
       return {
         id: s.id,
@@ -100,6 +101,7 @@ export default async function TeqdimatlarPage() {
         submittedAt: s.submitted_at ?? s.created_at,
         demoUrl: s.demo_url,
         repoUrl: s.repo_url,
+        presentationUrl: s.presentation_url ?? null,
         files: filesMap.get(s.team_id) ?? [],
       };
     });
@@ -205,6 +207,11 @@ export default async function TeqdimatlarPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
+                      {submission.presentationUrl && (
+                        <a href={submission.presentationUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#0D47A1] hover:underline">
+                          <Presentation className="size-3" /> Teqdimat
+                        </a>
+                      )}
                       {submission.demoUrl && (
                         <a href={submission.demoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#0D47A1] hover:underline">
                           <ExternalLink className="size-3" /> Demo
@@ -215,7 +222,7 @@ export default async function TeqdimatlarPage() {
                           <ExternalLink className="size-3" /> Repo
                         </a>
                       )}
-                      {!submission.demoUrl && !submission.repoUrl && (
+                      {!submission.demoUrl && !submission.repoUrl && !submission.presentationUrl && (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </div>

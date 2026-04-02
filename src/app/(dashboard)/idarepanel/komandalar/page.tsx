@@ -30,6 +30,7 @@ interface TeamRow {
   project_title: string | null;
   member_count: number;
   captain: string;
+  isFinalist: boolean;
 }
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -100,6 +101,23 @@ export default async function KomandalarPage() {
 
     const subMap = new Map((subs ?? []).map((s: { team_id: string; title: string }) => [s.team_id, s.title]));
 
+    // Get finalist team IDs (teams assigned to active judging round)
+    const { data: activeRound } = await supabase
+      .from('judging_rounds')
+      .select('id')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+
+    const finalistIds = new Set<string>();
+    if (activeRound) {
+      const { data: assignments } = await supabase
+        .from('judge_assignments')
+        .select('team_id')
+        .eq('round_id', activeRound.id);
+      (assignments ?? []).forEach(a => finalistIds.add(a.team_id));
+    }
+
     teams = dbTeams.map((t: { id: string; name: string; status: string; track: string | null; created_at: string; team_members: { full_name: string; role: string }[] }) => {
       const leader = t.team_members?.find((m) => m.role === 'leader');
       return {
@@ -110,6 +128,7 @@ export default async function KomandalarPage() {
         project_title: subMap.get(t.id) ?? t.track ?? null,
         member_count: t.team_members?.length ?? 0,
         captain: leader?.full_name ?? '-',
+        isFinalist: finalistIds.has(t.id),
       };
     });
   } catch {
@@ -215,12 +234,17 @@ export default async function KomandalarPage() {
                     })}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant(team.status)}>
-                      {statusLabel(team.status)}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge variant={statusVariant(team.status)}>
+                        {statusLabel(team.status)}
+                      </Badge>
+                      {team.isFinalist && (
+                        <Badge className="bg-amber-500 text-white text-[10px] px-1.5">Finalist</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <TeamActions teamId={team.id} status={team.status} canReview={canReview} />
+                    <TeamActions teamId={team.id} status={team.status} canReview={canReview} isFinalist={team.isFinalist} />
                   </TableCell>
                 </TableRow>
               ))
