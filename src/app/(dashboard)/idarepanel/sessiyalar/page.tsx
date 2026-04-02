@@ -31,8 +31,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { createSession, deleteSession } from './actions';
+import { createSession, deleteSession, getSessions, getHosts } from './actions';
 
 /* ── Types ───────────────────────────────────────────────── */
 type SessionType = 'training' | 'mentoring' | 'workshop';
@@ -64,50 +63,14 @@ export default function SessiyalarPage() {
   const [submitting, setSubmitting] = useState(false);
   const [sessionType, setSessionType] = useState<'training' | 'mentoring' | 'workshop'>('training');
   const [isOnline, setIsOnline] = useState(false);
+  const [trainers, setTrainers] = useState<{id: string; name: string; email: string}[]>([]);
+  const [mentors, setMentors] = useState<{id: string; name: string; email: string}[]>([]);
+  const [hostId, setHostId] = useState<string>('');
 
   async function loadSessions() {
-    const supabase = createClient();
     try {
-      const { data: hackathon } = await supabase
-        .from('hackathons')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (!hackathon) throw new Error('no hackathon');
-
-      const { data: dbSessions, error } = await supabase
-        .from('sessions')
-        .select('id, title, session_type, session_date, start_time, end_time, location, is_online, capacity, host_id, profiles!sessions_host_id_fkey(full_name)')
-        .eq('hackathon_id', hackathon.id)
-        .order('session_date', { ascending: true });
-
-      if (error || !dbSessions || dbSessions.length === 0) throw new Error('no sessions');
-
-      const sessionIds = dbSessions.map((s: { id: string }) => s.id);
-      const { data: bookings } = await supabase
-        .from('session_bookings')
-        .select('session_id')
-        .in('session_id', sessionIds)
-        .eq('status', 'confirmed');
-
-      const bookingCounts = new Map<string, number>();
-      (bookings ?? []).forEach((b: { session_id: string }) => {
-        bookingCounts.set(b.session_id, (bookingCounts.get(b.session_id) ?? 0) + 1);
-      });
-
-      setSessions(dbSessions.map((s: Record<string, unknown>) => ({
-        id: s.id as string,
-        title: s.title as string,
-        host: ((s.profiles as Record<string, string> | null)?.full_name) ?? '-',
-        date: s.session_date as string,
-        time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
-        type: s.session_type as SessionType,
-        currentAttendees: bookingCounts.get(s.id as string) ?? 0,
-        maxAttendees: (s.capacity as number) ?? 30,
-        location: s.is_online ? null : (s.location as string | null),
-      })));
+      const result = await getSessions();
+      setSessions(result.sessions as SessionRow[]);
     } catch {
       setSessions([]);
     } finally {
@@ -115,7 +78,10 @@ export default function SessiyalarPage() {
     }
   }
 
-  useEffect(() => { loadSessions(); }, []);
+  useEffect(() => {
+    loadSessions();
+    getHosts().then(h => { setTrainers(h.trainers); setMentors(h.mentors); });
+  }, []);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -131,12 +97,14 @@ export default function SessiyalarPage() {
       location: fd.get('location') as string,
       is_online: isOnline,
       capacity: Number(fd.get('capacity')) || 25,
+      host_id: hostId || null,
     });
     setSubmitting(false);
     if (result.error) {
       alert('Xeta: ' + result.error);
     } else {
       setDialogOpen(false);
+      setHostId('');
       loadSessions();
     }
   }
@@ -203,6 +171,22 @@ export default function SessiyalarPage() {
                   <Label htmlFor="capacity">Tutum</Label>
                   <Input id="capacity" name="capacity" type="number" defaultValue={25} min={1} />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="host">
+                  {sessionType === 'mentoring' ? 'Mentor' : 'Təlimçi'} *
+                </Label>
+                <select
+                  id="host"
+                  value={hostId}
+                  onChange={(e) => setHostId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Seçin...</option>
+                  {(sessionType === 'mentoring' ? mentors : trainers).map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="session_date">Tarix *</Label>

@@ -20,6 +20,7 @@ export async function createSession(formData: {
   location: string;
   is_online: boolean;
   capacity: number;
+  host_id: string | null;
 }) {
   const supabase = getSupabase();
   // Get active hackathon
@@ -47,6 +48,7 @@ export async function createSession(formData: {
       location: formData.is_online ? null : formData.location,
       is_online: formData.is_online,
       capacity: formData.capacity,
+      host_id: formData.host_id || null,
     });
 
   if (error) {
@@ -70,4 +72,86 @@ export async function deleteSession(sessionId: string) {
 
   revalidatePath('/idarepanel/sessiyalar');
   return { success: true };
+}
+
+export async function getSessions() {
+  const supabase = getSupabase();
+  const { data: hackathon } = await supabase
+    .from('hackathons')
+    .select('id')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!hackathon) return { sessions: [] };
+
+  const { data: dbSessions } = await supabase
+    .from('sessions')
+    .select('id, title, session_type, session_date, start_time, end_time, location, is_online, capacity, host_id, profiles!sessions_host_id_fkey(full_name)')
+    .eq('hackathon_id', hackathon.id)
+    .order('session_date', { ascending: true });
+
+  if (!dbSessions) return { sessions: [] };
+
+  const sessionIds = dbSessions.map(s => s.id);
+  const { data: bookings } = await supabase
+    .from('session_bookings')
+    .select('session_id')
+    .in('session_id', sessionIds)
+    .eq('status', 'confirmed');
+
+  const bookingCounts = new Map<string, number>();
+  (bookings ?? []).forEach((b: { session_id: string }) => {
+    bookingCounts.set(b.session_id, (bookingCounts.get(b.session_id) ?? 0) + 1);
+  });
+
+  const sessions = dbSessions.map((s: Record<string, unknown>) => ({
+    id: s.id as string,
+    title: s.title as string,
+    host: ((s.profiles as Record<string, string> | null)?.full_name) ?? '-',
+    date: s.session_date as string,
+    time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
+    type: s.session_type as string,
+    currentAttendees: bookingCounts.get(s.id as string) ?? 0,
+    maxAttendees: (s.capacity as number) ?? 30,
+    location: s.is_online ? null : (s.location as string | null),
+  }));
+
+  return { sessions };
+}
+
+export async function getHosts() {
+  const supabase = getSupabase();
+
+  // Get trainers
+  const { data: trainerRoles } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', 'trainer');
+
+  const trainerIds = (trainerRoles ?? []).map((r: { user_id: string }) => r.user_id);
+
+  // Get mentors
+  const { data: mentorRoles } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', 'mentor');
+
+  const mentorIds = (mentorRoles ?? []).map((r: { user_id: string }) => r.user_id);
+
+  const allIds = [...new Set([...trainerIds, ...mentorIds])];
+
+  if (allIds.length === 0) return { trainers: [], mentors: [] };
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', allIds);
+
+  const profileMap = new Map((profiles ?? []).map((p: { id: string; full_name: string; email: string }) => [p.id, p]));
+
+  const trainers = trainerIds.map(id => profileMap.get(id)).filter(Boolean).map((p: any) => ({ id: p.id, name: p.full_name, email: p.email }));
+  const mentors = mentorIds.map(id => profileMap.get(id)).filter(Boolean).map((p: any) => ({ id: p.id, name: p.full_name, email: p.email }));
+
+  return { trainers, mentors };
 }

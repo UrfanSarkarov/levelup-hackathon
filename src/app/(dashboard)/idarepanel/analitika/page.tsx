@@ -20,7 +20,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { createClient } from '@/lib/supabase/client';
+import { getAnalyticsData } from './actions';
 
 const PIE_COLORS = ['#0D47A1', '#2EC4B6', '#6BBF6B', '#FF6B6B', '#FFA726'];
 
@@ -33,61 +33,10 @@ export default function AnalitikaPage() {
   useEffect(() => {
     async function fetchAnalytics() {
       try {
-        const supabase = createClient();
-
-        // Get latest hackathon
-        const { data: hackathon, error: hErr } = await supabase
-          .from('hackathons')
-          .select('id')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (hErr || !hackathon) throw new Error('no hackathon');
-
-        // Fetch teams with members for track, size, and university data
-        const { data: teams, error: tErr } = await supabase
-          .from('teams')
-          .select('id, track, team_members(university)')
-          .eq('hackathon_id', hackathon.id);
-
-        if (tErr || !teams || teams.length === 0) throw new Error('no teams');
-
-        // Build track distribution
-        const trackCounts = new Map<string, number>();
-        teams.forEach((t: { track: string | null }) => {
-          const track = t.track ?? 'Diger';
-          trackCounts.set(track, (trackCounts.get(track) ?? 0) + 1);
-        });
-        const newTrackData = Array.from(trackCounts.entries())
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count);
-
-        // Build team size distribution
-        const sizeCounts = new Map<number, number>();
-        teams.forEach((t: { team_members: unknown[] | null }) => {
-          const size = t.team_members?.length ?? 0;
-          if (size > 0) sizeCounts.set(size, (sizeCounts.get(size) ?? 0) + 1);
-        });
-        const newTeamSizeData = Array.from(sizeCounts.entries())
-          .map(([size, value]) => ({ name: `${size} uzv`, value }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        // Build university distribution
-        const uniCounts = new Map<string, number>();
-        teams.forEach((t: { team_members: { university: string | null }[] | null }) => {
-          (t.team_members ?? []).forEach((m) => {
-            const uni = m.university ?? 'Diger';
-            uniCounts.set(uni, (uniCounts.get(uni) ?? 0) + 1);
-          });
-        });
-        const newUniData = Array.from(uniCounts.entries())
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count);
-
-        if (newTrackData.length > 0) setTrackData(newTrackData);
-        if (newTeamSizeData.length > 0) setTeamSizeData(newTeamSizeData);
-        if (newUniData.length > 0) setUniversityData(newUniData);
+        const data = await getAnalyticsData();
+        if (data.trackData.length > 0) setTrackData(data.trackData);
+        if (data.teamSizeData.length > 0) setTeamSizeData(data.teamSizeData);
+        if (data.universityData.length > 0) setUniversityData(data.universityData);
       } catch {
         // leave defaults
       }

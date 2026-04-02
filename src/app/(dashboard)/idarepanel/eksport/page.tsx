@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  AlertTriangle,
   Download,
   FileSpreadsheet,
   Users,
@@ -90,14 +89,6 @@ export default function EksportPage() {
         <p className="text-muted-foreground">
           Hackathon melumatlarini Excel formatinda yukleyin
         </p>
-      </div>
-
-      {/* Mock-data banner */}
-      <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        <AlertTriangle className="size-4 shrink-0" />
-        <span>
-          Supabase baglantisi qurulmayib — demo melumatlar gosterilir
-        </span>
       </div>
 
       {/* Export cards grid */}

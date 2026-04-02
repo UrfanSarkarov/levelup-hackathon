@@ -44,33 +44,57 @@ interface ScoringCriterion {
 const SCORING_CRITERIA: ScoringCriterion[] = [
   {
     id: 'c1',
-    name: 'Innovasiya',
+    name: 'Problemin aydinliqi',
     maxScore: 10,
-    description: 'Hellin ne derecede yenilikci ve orijinaldir?',
+    description: 'Komanda heqiqi bir problemi duzgun identifikasiya edibmi?',
   },
   {
     id: 'c2',
-    name: 'Texniki icra',
+    name: 'Hellin innovativliyi',
     maxScore: 10,
-    description: 'Kodun keyfiyyeti, arxitektura ve texniki hell',
+    description: 'Teklif olunan hell movcud hellerden ne ile ferqlenir?',
   },
   {
     id: 'c3',
-    name: 'Dizayn ve UX',
+    name: 'Texniki icra imkani',
     maxScore: 10,
-    description: 'Istifadeci interfeysi ve tecrubesi',
+    description: 'Hellin texniki olaraq heyata kecirilmesi mumkundurmu?',
   },
   {
     id: 'c4',
-    name: 'Biznes deyeri',
+    name: 'Potensial tesir',
     maxScore: 10,
-    description: 'Bazar potensiali ve praktik tetbiqi',
+    description: 'Layihenin potensial tesiri ne qeder boyukdur?',
   },
   {
     id: 'c5',
-    name: 'Teqdimat',
+    name: 'Hedef auditoriya',
     maxScore: 10,
-    description: 'Sunu keyfiyyeti ve komanda isguzarliqi',
+    description: 'Hedef auditoriya duzgun mueyyen olunubmu?',
+  },
+  {
+    id: 'c6',
+    name: 'Biznes modeli',
+    maxScore: 10,
+    description: 'Biznes modeli ve ya davamlilig plani varmi?',
+  },
+  {
+    id: 'c7',
+    name: 'Teqdimat keyfiyyeti',
+    maxScore: 10,
+    description: 'Komandanin teqdimati ne qeder aydin ve inandiricidur?',
+  },
+  {
+    id: 'c8',
+    name: 'Prototip ve demo',
+    maxScore: 10,
+    description: 'Prototip ve ya demo ne qeder funksionaldir?',
+  },
+  {
+    id: 'c9',
+    name: 'Inkisaf potensiali',
+    maxScore: 10,
+    description: 'Layihenin inkisaf potensiali (scalability) necedir?',
   },
 ];
 

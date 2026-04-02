@@ -110,18 +110,18 @@ async function exportAttendance(hackathonId: string): Promise<any[]> {
   const supabase = getSupabase();
   const { data: bookings } = await supabase
     .from("session_bookings")
-    .select("created_at, sessions!inner(title, session_type, scheduled_date, hackathon_id), profiles(full_name, email)")
+    .select("created_at, sessions!inner(title, session_type, session_date, hackathon_id), profiles(full_name, email)")
     .eq("sessions.hackathon_id", hackathonId);
 
   if (!bookings) return [];
 
   return bookings.map((b) => {
-    const session = b.sessions as unknown as { title: string; session_type: string; scheduled_date: string };
+    const session = b.sessions as unknown as { title: string; session_type: string; session_date: string };
     const profile = b.profiles as unknown as { full_name: string; email: string } | null;
     return {
       "Sessiya": session?.title ?? "",
       "Tip": session?.session_type ?? "",
-      "Tarix": session?.scheduled_date ?? "",
+      "Tarix": session?.session_date ?? "",
       "İştirakçı": profile?.full_name ?? "",
       "E-poçt": profile?.email ?? "",
       "Qeydiyyat tarixi": new Date(b.created_at).toLocaleDateString("az-AZ"),
