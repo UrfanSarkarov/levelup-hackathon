@@ -140,7 +140,6 @@ export async function createJudgingRound(data: {
         round_id: newRound.id,
         judge_id: judge.user_id,
         team_id: teamId,
-        is_completed: false,
       });
     }
   }

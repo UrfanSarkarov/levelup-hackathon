@@ -186,7 +186,6 @@ export async function addTeamToFinalist(teamId: string) {
     round_id: round.id,
     judge_id: j.user_id,
     team_id: teamId,
-    is_completed: false,
   }));
 
   const { error } = await supabase.from('judge_assignments').insert(assignments);
