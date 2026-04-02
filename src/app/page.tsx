@@ -207,6 +207,9 @@ function Navbar() {
                 {l.label}
               </a>
             ))}
+            <Link href="/giris" className="border border-[#0D47A1] text-[#0D47A1] hover:bg-[#0D47A1] hover:text-white font-semibold px-5 py-2 rounded-lg transition-all">
+              Daxil ol
+            </Link>
             <Link href="/qeydiyyat" className="bg-[#0D47A1] hover:bg-[#1565C0] text-white font-semibold px-5 py-2 rounded-lg transition-all">
               Qeydiyyat
             </Link>
@@ -233,7 +236,10 @@ function Navbar() {
                 {l.label}
               </a>
             ))}
-            <Link href="/qeydiyyat" className="block bg-[#0D47A1] hover:bg-[#1565C0] text-white font-semibold px-5 py-2.5 rounded-lg text-center mt-3">
+            <Link href="/giris" className="block border border-[#0D47A1] text-[#0D47A1] hover:bg-[#0D47A1] hover:text-white font-semibold px-5 py-2.5 rounded-lg text-center mt-3">
+              Daxil ol
+            </Link>
+            <Link href="/qeydiyyat" className="block bg-[#0D47A1] hover:bg-[#1565C0] text-white font-semibold px-5 py-2.5 rounded-lg text-center mt-2">
               Qeydiyyat
             </Link>
           </div>

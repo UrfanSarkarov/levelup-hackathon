@@ -167,6 +167,12 @@ export default function QeydiyyatPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [teamId, setTeamId] = useState<string | null>(null);
+  const [accountCreated, setAccountCreated] = useState(false);
+  const [accountError, setAccountError] = useState("");
+  const [accountSubmitting, setAccountSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [accountForm, setAccountForm] = useState({ password: "", confirmPassword: "" });
   const totalSteps = 3;
 
   const updateMember = (index: number, field: keyof MemberData, value: string) => {
@@ -186,18 +192,156 @@ export default function QeydiyyatPage() {
     setSubmitting(true);
     try {
       const res = await fetch("/api/qeydiyyat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-      if (res.ok) setSubmitted(true); else alert("Xəta baş verdi.");
+      const data = await res.json();
+      if (res.ok) {
+        setTeamId(data.teamId);
+        setSubmitted(true);
+      } else {
+        alert(data.error || "Xəta baş verdi.");
+      }
     } catch { alert("Şəbəkə xətası."); } finally { setSubmitting(false); }
   };
 
-  if (submitted) {
+  const handleCreateAccount = async () => {
+    setAccountError("");
+    if (accountForm.password.length < 6) {
+      setAccountError("Parol minimum 6 simvol olmalıdır");
+      return;
+    }
+    if (accountForm.password !== accountForm.confirmPassword) {
+      setAccountError("Parollar uyğun gəlmir");
+      return;
+    }
+    setAccountSubmitting(true);
+    try {
+      const captain = form.members[0];
+      const res = await fetch("/api/hesab-yarat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamId,
+          email: captain.email,
+          password: accountForm.password,
+          fullName: `${captain.ad} ${captain.soyad}`.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAccountCreated(true);
+      } else {
+        setAccountError(data.error || "Hesab yaradılarkən xəta baş verdi");
+      }
+    } catch {
+      setAccountError("Şəbəkə xətası");
+    } finally {
+      setAccountSubmitting(false);
+    }
+  };
+
+  // Final success — account created
+  if (accountCreated) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F7FA]">
         <div className="light-card p-10 sm:p-16 text-center max-w-lg mx-auto">
           <div className="text-6xl mb-6">🎉</div>
-          <h1 className="text-3xl font-bold text-[#1A1A2E] mb-4">Qeydiyyat uğurla tamamlandı!</h1>
-          <p className="text-[#4A5568] mb-8">Müraciətiniz qəbul edildi. Nəticələr 2 May 2026-dək e-poçt vasitəsilə bildiriləcək.</p>
-          <Link href="/" className="inline-block bg-[#0D47A1] hover:bg-[#1565C0] text-white font-bold px-8 py-3 rounded-xl transition-all">Ana səhifəyə qayıt</Link>
+          <h1 className="text-3xl font-bold text-[#1A1A2E] mb-4">Hər şey hazırdır!</h1>
+          <p className="text-[#4A5568] mb-3">Qeydiyyatınız və hesabınız uğurla yaradıldı.</p>
+          <div className="bg-[#0D47A1]/5 rounded-xl p-4 mb-6 text-left">
+            <p className="text-sm text-[#4A5568] mb-1">Giriş məlumatlarınız:</p>
+            <p className="text-[#1A1A2E] font-medium">E-poçt: <span className="text-[#0D47A1]">{form.members[0].email}</span></p>
+            <p className="text-[#1A1A2E] font-medium">Parol: <span className="text-[#718096]">sizin təyin etdiyiniz parol</span></p>
+          </div>
+          <p className="text-sm text-[#718096] mb-8">Nəticələr 2 May 2026-dək e-poçt vasitəsilə bildiriləcək.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/giris" className="inline-block bg-[#0D47A1] hover:bg-[#1565C0] text-white font-bold px-8 py-3 rounded-xl transition-all">
+              Daxil ol
+            </Link>
+            <Link href="/" className="inline-block border border-gray-300 hover:bg-gray-50 text-[#4A5568] font-bold px-8 py-3 rounded-xl transition-all">
+              Ana səhifəyə qayıt
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Step: Create account after registration
+  if (submitted) {
+    const captain = form.members[0];
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F7FA]">
+        <div className="light-card p-8 sm:p-12 max-w-md mx-auto w-full">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-[#1A1A2E] mb-2">Qeydiyyat tamamlandı!</h1>
+            <p className="text-[#718096]">İndi komanda hesabınızı yaradın</p>
+          </div>
+
+          <div className="bg-[#F5F7FA] rounded-xl p-4 mb-6">
+            <p className="text-xs text-[#718096] uppercase tracking-wide mb-2">Komanda</p>
+            <p className="font-semibold text-[#1A1A2E]">{form.komandaAdi}</p>
+            <p className="text-sm text-[#718096] mt-1">Kapitan: {captain.ad} {captain.soyad}</p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">E-poçt (istifadəçi adı)</label>
+              <input
+                type="email"
+                value={captain.email}
+                disabled
+                className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-2.5 text-[#718096] cursor-not-allowed"
+              />
+              <p className="text-xs text-[#718096] mt-1">Qeydiyyat zamanı daxil etdiyiniz e-poçt</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">Parol <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={accountForm.password}
+                  onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+                  placeholder="Minimum 6 simvol"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all pr-12"
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#718096] hover:text-[#1A1A2E] text-sm">
+                  {showPassword ? "Gizlə" : "Göstər"}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">Parolu təsdiqlə <span className="text-red-500">*</span></label>
+              <input
+                type="password"
+                value={accountForm.confirmPassword}
+                onChange={(e) => setAccountForm({ ...accountForm, confirmPassword: e.target.value })}
+                placeholder="Parolu yenidən daxil edin"
+                className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all"
+              />
+            </div>
+
+            {accountError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                {accountError}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleCreateAccount}
+              disabled={accountSubmitting || !accountForm.password || !accountForm.confirmPassword}
+              className="w-full bg-[#0D47A1] hover:bg-[#1565C0] text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {accountSubmitting ? "Yaradılır..." : "Hesabı yarat"}
+            </button>
+          </div>
         </div>
       </div>
     );

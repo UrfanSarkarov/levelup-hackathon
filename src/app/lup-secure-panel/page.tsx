@@ -304,12 +304,12 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 <span className="font-semibold text-[#1A1A2E]">25 Aprel 2026</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-[#718096]">Maks. komanda sayı</span>
+                <span className="text-[#718096]">Seçiləcək komanda</span>
                 <span className="font-semibold text-[#1A1A2E]">15</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-[#718096]">Yer doluluğu</span>
-                <span className={`font-semibold ${registrations.length >= 15 ? "text-red-500" : "text-green-600"}`}>{Math.round((registrations.length / 15) * 100)}%</span>
+                <span className="text-[#718096]">Qeydiyyat sayı</span>
+                <span className="font-semibold text-green-600">{registrations.length} komanda</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
                 <span className="text-[#718096]">Ort. komanda ölçüsü</span>
