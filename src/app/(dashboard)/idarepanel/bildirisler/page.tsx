@@ -52,13 +52,9 @@ export default function BildirislerPage() {
   useEffect(() => {
     (async () => {
       try {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { data: notifs, error } = await supabase
-          .from('notifications')
-          .select('id, title, message, type, created_at, user_id')
-          .order('created_at', { ascending: false })
-          .limit(20);
+        const res = await fetch('/api/notifications');
+        const { notifications: notifs } = await res.json();
+        const error = !notifs;
 
         if (error || !notifs || notifs.length === 0) throw new Error('no data');
 
@@ -68,7 +64,7 @@ export default function BildirislerPage() {
           session_reminder: 'Istirakcilar',
         };
 
-        setSentNotifications(notifs.map((n) => ({
+        setSentNotifications(notifs.map((n: { id: string; title: string; body: string; type: string; created_at: string; user_id: string | null }) => ({
           id: n.id,
           recipient: n.user_id ? 'Ferdi bildiris' : (RECIPIENT_LABELS[n.type] ?? 'Hamiya'),
           subject: n.title,

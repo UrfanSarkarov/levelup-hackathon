@@ -32,7 +32,6 @@ interface TrainingSession {
   isBooked: boolean;
 }
 
-/* ── Page ────────────────────────────────────────────────── */
 export default function TelimlerPage() {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,66 +41,13 @@ export default function TelimlerPage() {
   useEffect(() => {
     async function loadSessions() {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const res = await fetch('/api/sessions?type=training');
+        const data = await res.json();
 
-        if (!user) return;
-
-        // Find the user's team
-        const { data: membership } = await supabase
-          .from('team_members')
-          .select('team_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .single();
-
-        if (membership) {
-          setTeamId(membership.team_id);
-        }
-
-        // Get training sessions
-        const { data: dbSessions } = await supabase
-          .from('sessions')
-          .select('id, title, description, session_type, session_date, start_time, end_time, capacity, host_id, profiles!sessions_host_id_fkey(full_name)')
-          .eq('session_type', 'training')
-          .order('session_date', { ascending: true });
-
-        if (!dbSessions || dbSessions.length === 0) { setSessions([]); return; }
-
-        // Get booking counts for each session
-        const sessionIds = dbSessions.map((s) => s.id);
-        const { data: bookings } = await supabase
-          .from('session_bookings')
-          .select('session_id, status')
-          .in('session_id', sessionIds)
-          .eq('status', 'confirmed');
-
-        // Get user's own bookings
-        const myTeamId = membership?.team_id;
-        const { data: myBookings } = myTeamId
-          ? await supabase
-              .from('session_bookings')
-              .select('session_id')
-              .eq('team_id', myTeamId)
-              .eq('status', 'confirmed')
-              .in('session_id', sessionIds)
-          : { data: [] };
-
-        const myBookedSessionIds = new Set(
-          (myBookings ?? []).map((b) => b.session_id)
-        );
-
-        const bookingCounts: Record<string, number> = {};
-        (bookings ?? []).forEach((b) => {
-          bookingCounts[b.session_id] = (bookingCounts[b.session_id] ?? 0) + 1;
-        });
+        if (data.teamId) setTeamId(data.teamId);
 
         setSessions(
-          dbSessions.map((s) => {
-            const rawProfile = s.profiles as unknown;
-            const hostProfile = Array.isArray(rawProfile) ? rawProfile[0] as { full_name: string } | undefined : rawProfile as { full_name: string } | null;
+          (data.sessions ?? []).map((s: { id: string; title: string; host_name: string | null; session_date: string; start_time: string; end_time: string; capacity: number; booked: number; isBooked: boolean }) => {
             const dateObj = new Date(s.session_date + 'T00:00:00');
             const dateStr = dateObj.toLocaleDateString('az-AZ', {
               day: 'numeric',
@@ -111,12 +57,12 @@ export default function TelimlerPage() {
             return {
               id: s.id,
               title: s.title,
-              trainer: hostProfile?.full_name ?? 'Namelum',
+              trainer: s.host_name ?? 'Namelum',
               date: dateStr,
               time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
-              capacity: s.capacity ?? 30,
-              booked: bookingCounts[s.id] ?? 0,
-              isBooked: myBookedSessionIds.has(s.id),
+              capacity: s.capacity,
+              booked: s.booked,
+              isBooked: s.isBooked,
             };
           })
         );
@@ -134,7 +80,6 @@ export default function TelimlerPage() {
     setBookingId(id);
     try {
       const supabase = createClient();
-
       const { error } = await supabase.rpc('book_session', {
         _session_id: id,
         _team_id: teamId,
@@ -148,7 +93,6 @@ export default function TelimlerPage() {
         );
       }
     } catch {
-      // Silently fail
     } finally {
       setBookingId(null);
     }
@@ -156,7 +100,6 @@ export default function TelimlerPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="rounded-lg bg-[#2EC4B6]/10 p-2">
           <GraduationCap className="size-5 text-[#2EC4B6]" />
@@ -171,7 +114,6 @@ export default function TelimlerPage() {
         </div>
       </div>
 
-      {/* Session cards grid */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -225,18 +167,13 @@ export default function TelimlerPage() {
                     </div>
                   </div>
 
-                  {/* Capacity bar */}
                   <div className="space-y-1">
-                    <Progress
-                      value={capacityPercent}
-                      className="h-2"
-                    />
+                    <Progress value={capacityPercent} className="h-2" />
                     <p className="text-xs text-muted-foreground text-right">
                       {capacityPercent}% dolu
                     </p>
                   </div>
 
-                  {/* Book button */}
                   {session.isBooked ? (
                     <Button variant="outline" disabled className="w-full">
                       Bron edilib

@@ -31,7 +31,6 @@ interface MentorSlot {
   isBooked: boolean;
 }
 
-/* ── Page ────────────────────────────────────────────────── */
 export default function MentorluqPage() {
   const [slots, setSlots] = useState<MentorSlot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,54 +40,13 @@ export default function MentorluqPage() {
   useEffect(() => {
     async function loadSlots() {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const res = await fetch('/api/sessions?type=mentoring');
+        const data = await res.json();
 
-        if (!user) return;
-
-        // Find the user's team
-        const { data: membership } = await supabase
-          .from('team_members')
-          .select('team_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .single();
-
-        if (membership) {
-          setTeamId(membership.team_id);
-        }
-
-        // Get mentoring sessions
-        const { data: dbSessions } = await supabase
-          .from('sessions')
-          .select('id, title, description, session_date, start_time, end_time, is_online, host_id, profiles!sessions_host_id_fkey(full_name, expertise_area)')
-          .eq('session_type', 'mentoring')
-          .order('session_date', { ascending: true });
-
-        if (!dbSessions || dbSessions.length === 0) { setSlots([]); return; }
-
-        // Get user's own bookings
-        const sessionIds = dbSessions.map((s) => s.id);
-        const myTeamId = membership?.team_id;
-        const { data: myBookings } = myTeamId
-          ? await supabase
-              .from('session_bookings')
-              .select('session_id')
-              .eq('team_id', myTeamId)
-              .eq('status', 'confirmed')
-              .in('session_id', sessionIds)
-          : { data: [] };
-
-        const myBookedSessionIds = new Set(
-          (myBookings ?? []).map((b) => b.session_id)
-        );
+        if (data.teamId) setTeamId(data.teamId);
 
         setSlots(
-          dbSessions.map((s) => {
-            const rawProfile = s.profiles as unknown;
-            const hostProfile = Array.isArray(rawProfile) ? rawProfile[0] as { full_name: string; expertise_area: string | null } | undefined : rawProfile as { full_name: string; expertise_area: string | null } | null;
+          (data.sessions ?? []).map((s: { id: string; title: string; host_name: string | null; expertise_area: string | null; description: string | null; session_date: string; start_time: string; end_time: string; is_online: boolean; isBooked: boolean }) => {
             const dateObj = new Date(s.session_date + 'T00:00:00');
             const dateStr = dateObj.toLocaleDateString('az-AZ', {
               day: 'numeric',
@@ -97,12 +55,12 @@ export default function MentorluqPage() {
             });
             return {
               id: s.id,
-              mentorName: hostProfile?.full_name ?? 'Namelum',
-              expertise: hostProfile?.expertise_area ?? s.description ?? '',
+              mentorName: s.host_name ?? 'Namelum',
+              expertise: s.expertise_area ?? s.description ?? '',
               date: dateStr,
               time: `${(s.start_time as string).slice(0, 5)} - ${(s.end_time as string).slice(0, 5)}`,
               mode: s.is_online ? 'online' : 'offline',
-              isBooked: myBookedSessionIds.has(s.id),
+              isBooked: s.isBooked,
             };
           })
         );
@@ -120,7 +78,6 @@ export default function MentorluqPage() {
     setBookingId(id);
     try {
       const supabase = createClient();
-
       const { error } = await supabase.rpc('book_session', {
         _session_id: id,
         _team_id: teamId,
@@ -132,7 +89,6 @@ export default function MentorluqPage() {
         );
       }
     } catch {
-      // Silently fail
     } finally {
       setBookingId(null);
     }
@@ -140,7 +96,6 @@ export default function MentorluqPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="rounded-lg bg-[#6BBF6B]/10 p-2">
           <UserCheck className="size-5 text-[#6BBF6B]" />
@@ -155,7 +110,6 @@ export default function MentorluqPage() {
         </div>
       </div>
 
-      {/* Mentor slots */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />

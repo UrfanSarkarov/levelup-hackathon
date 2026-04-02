@@ -64,7 +64,7 @@ export async function sendNotification(data: {
       hackathon_id: hackathon.id,
       user_id: null,
       title: data.title,
-      message: data.message,
+      body: data.message,
       type: data.type || 'announcement',
       is_read: false,
     });
@@ -75,7 +75,7 @@ export async function sendNotification(data: {
       hackathon_id: hackathon.id,
       user_id: uid,
       title: data.title,
-      message: data.message,
+      body: data.message,
       type: data.type || 'announcement',
       is_read: false,
     }));

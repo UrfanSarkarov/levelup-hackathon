@@ -15,7 +15,7 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type { HackathonPhase } from '@/types/app.types';
 
 /* ── Stepper phases ───────────────────────────────────────── */
@@ -77,6 +77,7 @@ export default async function KomandaDashboardPage() {
 
   try {
     const supabase = await createClient();
+    const serviceClient = createServiceClient();
 
     const {
       data: { user },
@@ -84,8 +85,8 @@ export default async function KomandaDashboardPage() {
 
     if (!user) throw new Error('no user');
 
-    // Get hackathon phase
-    const { data: hackathon } = await supabase
+    // Get hackathon phase (use service client to bypass RLS)
+    const { data: hackathon } = await serviceClient
       .from('hackathons')
       .select('current_phase')
       .order('created_at', { ascending: false })
@@ -96,8 +97,8 @@ export default async function KomandaDashboardPage() {
       currentPhase = hackathon.current_phase;
     }
 
-    // Get team name and status
-    const { data: membership } = await supabase
+    // Get team name and status (use service client to bypass RLS)
+    const { data: membership } = await serviceClient
       .from('team_members')
       .select('team_id, teams(name, status)')
       .eq('user_id', user.id)

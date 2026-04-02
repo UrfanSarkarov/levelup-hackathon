@@ -45,6 +45,12 @@ export const navigationItems: NavItem[] = [
     roles: ['super_admin'],
   },
   {
+    title: 'Nəticələr',
+    href: '/idarepanel/qiymetlendirme',
+    icon: 'Trophy',
+    roles: ['super_admin'],
+  },
+  {
     title: 'Sessiyalar',
     href: '/idarepanel/sessiyalar',
     icon: 'CalendarDays',
@@ -208,7 +214,7 @@ export function getGroupedNavigation(role: AppRole): NavGroup[] {
       {
         label: 'İdarəetmə',
         items: items.filter((i) =>
-          ['/idarepanel/komandalar', '/idarepanel/telmciler', '/idarepanel/mentorlar', '/idarepanel/munsifler'].includes(i.href),
+          ['/idarepanel/komandalar', '/idarepanel/telmciler', '/idarepanel/mentorlar', '/idarepanel/munsifler', '/idarepanel/qiymetlendirme'].includes(i.href),
         ),
       },
       {
