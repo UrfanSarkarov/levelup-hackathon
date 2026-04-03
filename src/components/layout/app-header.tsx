@@ -21,9 +21,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -167,34 +165,30 @@ export function AppHeader({ profile }: AppHeaderProps) {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end" sideOffset={8} className="w-56">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">{profile.full_name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {profile.email}
-                </p>
-              </div>
-            </DropdownMenuLabel>
+            <div className="px-1.5 py-1.5">
+              <p className="text-sm font-medium">{profile.full_name}</p>
+              <p className="text-xs text-muted-foreground">
+                {profile.email}
+              </p>
+            </div>
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => router.push(profilePath[role] || '/komanda/profil')}
-              >
-                <User className="mr-2 size-4" />
-                <span>Profil</span>
-              </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => router.push(profilePath[role] || '/komanda/profil')}
+            >
+              <User className="mr-2 size-4" />
+              <span>Profil</span>
+            </DropdownMenuItem>
 
-              {role === 'super_admin' && (
-                <DropdownMenuItem
-                  onClick={() => router.push('/idarepanel/ayarlar')}
-                >
-                  <Settings className="mr-2 size-4" />
-                  <span>Ayarlar</span>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuGroup>
+            {role === 'super_admin' && (
+              <DropdownMenuItem
+                onClick={() => router.push('/idarepanel/ayarlar')}
+              >
+                <Settings className="mr-2 size-4" />
+                <span>Ayarlar</span>
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuSeparator />
 

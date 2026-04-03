@@ -205,20 +205,8 @@ export async function getScoringResults(): Promise<ScoringData | null> {
     totalCount: info.total,
   }));
 
-  // Check if results are published (stored in round metadata or notifications)
-  // We check if any "results" notification exists for this round
-  let isPublished = false;
-  try {
-    const { data: resultNotif } = await supabase
-      .from('notifications')
-      .select('id')
-      .eq('type', 'success')
-      .like('title', '%yer%')
-      .limit(1);
-    isPublished = (resultNotif && resultNotif.length > 0) || false;
-  } catch {
-    // ignore
-  }
+  // Round is published if it was deactivated (is_active = false means results were sent)
+  const isPublished = !round.is_active;
 
   return {
     roundId: round.id,
@@ -232,97 +220,96 @@ export async function getScoringResults(): Promise<ScoringData | null> {
 
 // Publish final results - send notifications to teams with their placement
 export async function publishResults(roundId: string) {
-  const supabase = getSupabase();
+  try {
+    const supabase = getSupabase();
 
-  // Get scoring data
-  const data = await getScoringResults();
-  if (!data || data.teams.length === 0) {
-    return { error: 'Qiymetlendirme neticeleri tapilmadi' };
-  }
-
-  // Check all judges completed
-  const allDone = data.judges.every(j => j.completedCount === j.totalCount);
-  if (!allDone) {
-    // Allow publishing even if not all complete, but warn
-  }
-
-  // Get hackathon ID
-  const { data: hackathon } = await supabase
-    .from('hackathons')
-    .select('id')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (!hackathon) return { error: 'Hackathon tapilmadi' };
-
-  // Send notification to each team with their placement
-  const notifications: {
-    hackathon_id: string;
-    user_id: string;
-    type: string;
-    title: string;
-    body: string;
-    is_read: boolean;
-  }[] = [];
-
-  for (let i = 0; i < data.teams.length; i++) {
-    const team = data.teams[i];
-    const rank = i + 1;
-
-    let title: string;
-    let body: string;
-
-    if (rank === 1) {
-      title = '1-ci yer - Tebriklər!';
-      body = `"${team.teamName}" komandasi Level UP Hackathon-da 1-ci yeri qazandi! Ortalama bal: ${team.averageTotal}. Sizi tebrik edirik!`;
-    } else if (rank === 2) {
-      title = '2-ci yer - Tebriklər!';
-      body = `"${team.teamName}" komandasi Level UP Hackathon-da 2-ci yeri qazandi! Ortalama bal: ${team.averageTotal}. Ela netice!`;
-    } else if (rank === 3) {
-      title = '3-cu yer - Tebriklər!';
-      body = `"${team.teamName}" komandasi Level UP Hackathon-da 3-cu yeri qazandi! Ortalama bal: ${team.averageTotal}. Goz el is!`;
-    } else {
-      title = `${rank}-ci yer`;
-      body = `"${team.teamName}" komandasi Level UP Hackathon-da ${rank}-ci yeri tutdu. Ortalama bal: ${team.averageTotal}. Istirak etdiyiniz ucun tesekku r edirik!`;
+    // Get scoring data
+    const data = await getScoringResults();
+    if (!data || data.teams.length === 0) {
+      return { error: 'Qiymetlendirme neticeleri tapilmadi' };
     }
 
-    // Get all team members
-    const { data: members } = await supabase
-      .from('team_members')
-      .select('user_id')
-      .eq('team_id', team.teamId)
-      .not('user_id', 'is', null);
+    // Get hackathon ID
+    const { data: hackathon } = await supabase
+      .from('hackathons')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-    for (const m of (members ?? [])) {
-      notifications.push({
-        hackathon_id: hackathon.id,
-        user_id: m.user_id,
-        type: rank <= 3 ? 'success' : 'info',
-        title,
-        body,
-        is_read: false,
-      });
+    if (!hackathon) return { error: 'Hackathon tapilmadi' };
+
+    // Send notification to each team with their placement
+    const notifications: {
+      hackathon_id: string;
+      user_id: string;
+      type: string;
+      title: string;
+      body: string;
+      is_read: boolean;
+    }[] = [];
+
+    for (let i = 0; i < data.teams.length; i++) {
+      const team = data.teams[i];
+      const rank = i + 1;
+
+      let title: string;
+      let body: string;
+
+      if (rank === 1) {
+        title = '1-ci yer - Tebriklər!';
+        body = `"${team.teamName}" komandasi Level UP Hackathon-da 1-ci yeri qazandi! Ortalama bal: ${team.averageTotal}. Sizi tebrik edirik!`;
+      } else if (rank === 2) {
+        title = '2-ci yer - Tebriklər!';
+        body = `"${team.teamName}" komandasi Level UP Hackathon-da 2-ci yeri qazandi! Ortalama bal: ${team.averageTotal}. Ela netice!`;
+      } else if (rank === 3) {
+        title = '3-cu yer - Tebriklər!';
+        body = `"${team.teamName}" komandasi Level UP Hackathon-da 3-cu yeri qazandi! Ortalama bal: ${team.averageTotal}. Gozel is!`;
+      } else {
+        title = `${rank}-cu yer`;
+        body = `"${team.teamName}" komandasi Level UP Hackathon-da ${rank}-cu yeri tutdu. Ortalama bal: ${team.averageTotal}. Istirak etdiyiniz ucun tesekkur edirik!`;
+      }
+
+      // Get all team members
+      const { data: members } = await supabase
+        .from('team_members')
+        .select('user_id')
+        .eq('team_id', team.teamId)
+        .not('user_id', 'is', null);
+
+      for (const m of (members ?? [])) {
+        notifications.push({
+          hackathon_id: hackathon.id,
+          user_id: m.user_id,
+          type: rank <= 3 ? 'success' : 'info',
+          title,
+          body,
+          is_read: false,
+        });
+      }
     }
-  }
 
-  // Insert all notifications
-  if (notifications.length > 0) {
-    const { error: nErr } = await supabase.from('notifications').insert(notifications);
-    if (nErr) {
-      return { error: 'Bildirisler gonderilerkən xeta: ' + nErr.message };
+    // Insert all notifications
+    if (notifications.length > 0) {
+      const { error: nErr } = await supabase.from('notifications').insert(notifications);
+      if (nErr) {
+        return { error: 'Bildirisler gonderilerkən xeta: ' + nErr.message };
+      }
     }
+
+    // Deactivate round (results published)
+    await supabase
+      .from('judging_rounds')
+      .update({ is_active: false })
+      .eq('id', roundId);
+
+    revalidatePath('/idarepanel/qiymetlendirme');
+    revalidatePath('/komanda');
+    revalidatePath('/komanda/bildirisler');
+
+    return { success: true, teamCount: data.teams.length };
+  } catch (err) {
+    console.error('Publish results error:', err);
+    return { error: 'Server xetasi: ' + (err instanceof Error ? err.message : 'Namelum xeta') };
   }
-
-  // Deactivate round (results published)
-  await supabase
-    .from('judging_rounds')
-    .update({ is_active: false })
-    .eq('id', roundId);
-
-  revalidatePath('/idarepanel/qiymetlendirme');
-  revalidatePath('/komanda');
-  revalidatePath('/komanda/bildirisler');
-
-  return { success: true, teamCount: data.teams.length };
 }

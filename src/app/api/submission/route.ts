@@ -26,15 +26,18 @@ export async function GET() {
       .limit(1)
       .single();
 
-    // Get team
+    // Get team with status
     const { data: membership } = await supabase
       .from('team_members')
-      .select('team_id')
+      .select('team_id, teams(status)')
       .eq('user_id', user.id)
       .limit(1)
       .single();
 
     if (!membership) return NextResponse.json({ error: 'Komanda tapilmadi' }, { status: 404 });
+
+    const teamObj = membership.teams as unknown as { status: string } | null;
+    const teamStatus = teamObj?.status ?? 'pending';
 
     // Get submission
     const { data: submission } = await supabase
@@ -59,6 +62,7 @@ export async function GET() {
       hackathonId: hackathon?.id ?? null,
       currentPhase: hackathon?.current_phase ?? 'registration_open',
       teamId: membership.team_id,
+      teamStatus,
       submission: submission ?? null,
       files: uploadedFiles,
     });

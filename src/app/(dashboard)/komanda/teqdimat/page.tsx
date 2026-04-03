@@ -61,7 +61,8 @@ export default function TeqdimatPage() {
       setTeamId(data.teamId);
 
       const phase = data.currentPhase;
-      const unlocked = ['sprint', 'judging', 'completed'].includes(phase);
+      const status = data.teamStatus ?? 'pending';
+      const unlocked = ['sprint', 'judging', 'completed'].includes(phase) && status === 'accepted';
       setIsLocked(!unlocked);
 
       if (data.submission) {
