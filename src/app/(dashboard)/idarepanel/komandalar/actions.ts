@@ -227,6 +227,149 @@ export async function addTeamToFinalist(teamId: string) {
   return { success: true };
 }
 
+// Delete all rejected teams (for cleaning up test data)
+export async function deleteRejectedTeams() {
+  const supabase = getSupabase();
+
+  // Get latest hackathon
+  const { data: hackathon } = await supabase
+    .from('hackathons')
+    .select('id')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!hackathon) return { error: 'Hackathon tapilmadi' };
+
+  // Get all rejected teams
+  const { data: rejectedTeams } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('hackathon_id', hackathon.id)
+    .eq('status', 'rejected');
+
+  if (!rejectedTeams || rejectedTeams.length === 0) {
+    return { error: 'Redd edilmis komanda tapilmadi' };
+  }
+
+  const teamIds = rejectedTeams.map(t => t.id);
+  const count = teamIds.length;
+
+  // Delete related data manually (in case cascade is not set up)
+  try {
+    // Get submissions for these teams
+    const { data: submissions } = await supabase
+      .from('submissions')
+      .select('id')
+      .in('team_id', teamIds);
+
+    const submissionIds = (submissions ?? []).map(s => s.id);
+
+    // Get judge assignments
+    const { data: assignments } = await supabase
+      .from('judge_assignments')
+      .select('id')
+      .in('team_id', teamIds);
+
+    const assignmentIds = (assignments ?? []).map(a => a.id);
+
+    // Delete scores tied to these assignments
+    if (assignmentIds.length > 0) {
+      await supabase.from('scores').delete().in('assignment_id', assignmentIds);
+    }
+
+    // Delete judge assignments
+    if (assignmentIds.length > 0) {
+      await supabase.from('judge_assignments').delete().in('team_id', teamIds);
+    }
+
+    // Delete submissions
+    if (submissionIds.length > 0) {
+      await supabase.from('submissions').delete().in('team_id', teamIds);
+    }
+
+    // Delete session bookings
+    await supabase.from('session_bookings').delete().in('team_id', teamIds);
+
+    // Delete team members
+    await supabase.from('team_members').delete().in('team_id', teamIds);
+
+    // Finally delete teams
+    const { error } = await supabase.from('teams').delete().in('id', teamIds);
+    if (error) return { error: error.message };
+  } catch (err) {
+    return { error: 'Silinerken xeta: ' + (err instanceof Error ? err.message : 'Namelum xeta') };
+  }
+
+  revalidatePath('/idarepanel/komandalar');
+  revalidatePath('/idarepanel');
+  return { success: true, count };
+}
+
+// Delete all non-accepted teams (for cleaning up test data)
+export async function deleteNonAcceptedTeams() {
+  const supabase = getSupabase();
+
+  // Get latest hackathon
+  const { data: hackathon } = await supabase
+    .from('hackathons')
+    .select('id')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!hackathon) return { error: 'Hackathon tapilmadi' };
+
+  // Get all non-accepted teams (pending, rejected, draft, etc.)
+  const { data: testTeams } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('hackathon_id', hackathon.id)
+    .not('status', 'in', '(accepted,active)');
+
+  if (!testTeams || testTeams.length === 0) {
+    return { error: 'Silinecek komanda tapilmadi' };
+  }
+
+  const teamIds = testTeams.map(t => t.id);
+  const count = teamIds.length;
+
+  try {
+    // Get judge assignments
+    const { data: assignments } = await supabase
+      .from('judge_assignments')
+      .select('id')
+      .in('team_id', teamIds);
+
+    const assignmentIds = (assignments ?? []).map(a => a.id);
+
+    // Delete scores tied to these assignments
+    if (assignmentIds.length > 0) {
+      await supabase.from('scores').delete().in('assignment_id', assignmentIds);
+      await supabase.from('judge_assignments').delete().in('team_id', teamIds);
+    }
+
+    // Delete submissions
+    await supabase.from('submissions').delete().in('team_id', teamIds);
+
+    // Delete session bookings
+    await supabase.from('session_bookings').delete().in('team_id', teamIds);
+
+    // Delete team members
+    await supabase.from('team_members').delete().in('team_id', teamIds);
+
+    // Finally delete teams
+    const { error } = await supabase.from('teams').delete().in('id', teamIds);
+    if (error) return { error: error.message };
+  } catch (err) {
+    return { error: 'Silinerken xeta: ' + (err instanceof Error ? err.message : 'Namelum xeta') };
+  }
+
+  revalidatePath('/idarepanel/komandalar');
+  revalidatePath('/idarepanel');
+  return { success: true, count };
+}
+
 // Remove team from active judging round
 export async function removeTeamFromFinalist(teamId: string) {
   const supabase = getSupabase();

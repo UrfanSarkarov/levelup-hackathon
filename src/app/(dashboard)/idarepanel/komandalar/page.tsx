@@ -20,6 +20,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import type { TeamStatus } from '@/types/app.types';
 import { TeamActions } from './team-actions';
 import { BulkRejectButton } from './bulk-reject-button';
+import { DeleteTeamsButton } from './delete-teams-button';
 
 /* ── Mock data ────────────────────────────────────────────── */
 interface TeamRow {
@@ -140,6 +141,7 @@ export default async function KomandalarPage() {
     pending: teams.filter((t) => t.status === 'pending').length,
     accepted: teams.filter((t) => t.status === 'accepted' || t.status === 'active').length,
     rejected: teams.filter((t) => t.status === 'rejected').length,
+    nonAccepted: teams.filter((t) => t.status !== 'accepted' && t.status !== 'active').length,
   };
 
   return (
@@ -154,6 +156,7 @@ export default async function KomandalarPage() {
         </div>
         <div className="flex items-center gap-3">
           <BulkRejectButton pendingCount={counts.pending} canReview={canReview} />
+          <DeleteTeamsButton rejectedCount={counts.rejected} nonAcceptedCount={counts.nonAccepted} />
           <div className="flex items-center gap-2 rounded-lg bg-[#0D47A1]/10 px-3 py-2 text-sm font-medium text-[#0D47A1]">
             <Users className="size-4" />
             <span>{counts.total} komanda</span>

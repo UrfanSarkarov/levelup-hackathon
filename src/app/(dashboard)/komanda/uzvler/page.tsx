@@ -9,15 +9,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   Users,
   Crown,
   Mail,
   Phone,
-  Copy,
-  Check,
   GraduationCap,
   Loader2,
 } from 'lucide-react';
@@ -34,20 +30,14 @@ interface TeamMember {
 
 /* ── Page ────────────────────────────────────────────────── */
 export default function KomandaUzvlerPage() {
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [inviteLink, setInviteLink] = useState('');
 
   useEffect(() => {
     async function loadMembers() {
       try {
         const res = await fetch('/api/team-members');
         const data = await res.json();
-
-        if (data.inviteCode) {
-          setInviteLink(`${window.location.origin}/devet/${data.inviteCode}`);
-        }
 
         if (data.members && data.members.length > 0) {
           setMembers(
@@ -79,12 +69,6 @@ export default function KomandaUzvlerPage() {
 
     loadMembers();
   }, []);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(inviteLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div className="space-y-6">
@@ -158,42 +142,6 @@ export default function KomandaUzvlerPage() {
           ))}
         </div>
       )}
-
-      {/* Invite link section */}
-      <Separator />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Devet linki</CardTitle>
-          <CardDescription>
-            Bu linki paylasaraq yeni uzvleri komandaniza devet edin
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 rounded-lg border bg-muted/50 px-4 py-2.5 font-mono text-sm">
-              {inviteLink}
-            </div>
-            <Button
-              onClick={handleCopy}
-              variant={copied ? 'default' : 'outline'}
-              className={copied ? 'bg-[#6BBF6B] text-white hover:bg-[#6BBF6B]/90' : ''}
-            >
-              {copied ? (
-                <>
-                  <Check className="mr-2 size-4" />
-                  Kopyalandi
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 size-4" />
-                  Kopyala
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
