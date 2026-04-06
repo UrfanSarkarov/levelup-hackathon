@@ -28,12 +28,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="az" className={cn("antialiased", inter.variable, "font-sans", geist.variable)}>
+    <html lang="az" data-accw-position="bottom-left" data-accw-offset="none" data-accw-size="md" className={cn("antialiased", inter.variable, "font-sans", geist.variable)}>
       <body className="min-h-screen">
         <a href="#main-content" className="skip-nav">
           Əsas məzmuna keç
         </a>
         {children}
+        <script src="https://accessibility.cert.gov.az/acc-widget.min.js" defer />
       </body>
     </html>
   );
