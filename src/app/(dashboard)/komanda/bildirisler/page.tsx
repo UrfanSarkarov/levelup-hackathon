@@ -172,9 +172,11 @@ export default function BildirislerPage() {
       </div>
 
       {/* Notifications list */}
+      <div aria-live="polite" aria-relevant="additions">
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-12" role="status" aria-label="Yüklənir">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+          <span className="sr-only">Bildirişlər yüklənir...</span>
         </div>
       ) : notifications.length === 0 ? (
         <Card>
@@ -187,14 +189,18 @@ export default function BildirislerPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" role="list" aria-label="Bildirişlər siyahısı">
           {notifications.map((n) => (
             <Card
               key={n.id}
+              role="listitem"
+              aria-label={`${n.title}${!n.isRead ? ' - oxunmamış' : ''}`}
               className={`cursor-pointer transition-colors ${
                 !n.isRead ? 'border-[#0D47A1]/20 bg-[#0D47A1]/5' : ''
               }`}
               onClick={() => toggleRead(n.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleRead(n.id); } }}
+              tabIndex={0}
             >
               <CardContent className="flex items-start gap-4 py-4">
                 <div className="mt-0.5 shrink-0">
@@ -227,6 +233,7 @@ export default function BildirislerPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

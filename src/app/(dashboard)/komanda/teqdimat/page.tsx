@@ -37,6 +37,7 @@ export default function TeqdimatPage() {
   const [hackathonId, setHackathonId] = useState<string | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [techInput, setTechInput] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -135,7 +136,7 @@ export default function TeqdimatPage() {
       const data = await res.json();
 
       if (data.error) {
-        alert('Xeta: ' + data.error);
+        setErrorMsg(data.error);
       } else {
         if (data.submissionId) setSubmissionId(data.submissionId);
         if (!isDraft) setIsSubmitted(true);
@@ -197,11 +198,18 @@ export default function TeqdimatPage() {
         </Card>
       ) : null}
 
+      {errorMsg && (
+        <div role="alert" aria-live="assertive" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+          Xəta: {errorMsg}
+        </div>
+      )}
+
       {!isLocked && !isSubmitted && <Separator />}
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-12" role="status" aria-label="Yüklənir">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+          <span className="sr-only">Yüklənir...</span>
         </div>
       ) : (
         <>
@@ -294,12 +302,12 @@ export default function TeqdimatPage() {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <Button variant="outline" disabled={formDisabled || saving} onClick={() => saveSubmission(true)}>
-                  {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                  {saving ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
                   Qaralama olaraq saxla
                 </Button>
                 <Button disabled={formDisabled || submitting} className="bg-[#0D47A1] text-white"
                   onClick={() => saveSubmission(false)}>
-                  {submitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
+                  {submitting ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : <Send className="mr-2 size-4" aria-hidden="true" />}
                   Son teqdimati gonder
                 </Button>
               </div>

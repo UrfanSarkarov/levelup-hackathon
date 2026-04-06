@@ -151,8 +151,9 @@ export default function QiymetlendirmePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="size-8 animate-spin text-[#0D47A1]" />
+      <div className="flex items-center justify-center py-20" role="status" aria-label="Yüklənir">
+        <Loader2 className="size-8 animate-spin text-[#0D47A1]" aria-hidden="true" />
+        <span className="sr-only">Yüklənir...</span>
       </div>
     );
   }
@@ -328,26 +329,29 @@ export default function QiymetlendirmePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {criteria.map((criterion, i) => (
-            <div key={criterion.id} className="space-y-3">
+            <div key={criterion.id} className="space-y-3" role="group" aria-labelledby={`criterion-${criterion.id}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="flex items-center gap-2 text-base">
-                    <Star className="size-4 text-amber-500" />
+                  <Label id={`criterion-${criterion.id}`} htmlFor={`score-${criterion.id}`} className="flex items-center gap-2 text-base">
+                    <Star className="size-4 text-amber-500" aria-hidden="true" />
                     {criterion.name}
                   </Label>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{criterion.description}</p>
+                  <p id={`criterion-desc-${criterion.id}`} className="mt-0.5 text-sm text-muted-foreground">{criterion.description}</p>
                 </div>
-                <span className="text-sm text-muted-foreground">/ {criterion.maxScore}</span>
+                <span className="text-sm text-muted-foreground" aria-hidden="true">/ {criterion.maxScore}</span>
               </div>
               <div className="flex items-center gap-4">
                 <Input
+                  id={`score-${criterion.id}`}
                   type="number" min={0} max={criterion.maxScore} placeholder="0"
                   disabled={!selectedTeam}
+                  aria-describedby={`criterion-desc-${criterion.id}`}
+                  aria-valuemin={0} aria-valuemax={criterion.maxScore} aria-valuenow={scores[criterion.id] ?? 0}
                   value={scores[criterion.id] ?? ''}
                   onChange={e => handleScoreChange(criterion.id, parseInt(e.target.value) || 0, criterion.maxScore)}
                   className="w-24"
                 />
-                <div className="h-2 flex-1 rounded-full bg-muted">
+                <div className="h-2 flex-1 rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={criterion.maxScore} aria-valuenow={scores[criterion.id] ?? 0} aria-label={`${criterion.name} balı`}>
                   {selectedTeam && (
                     <div className="h-2 rounded-full bg-[#0D47A1] transition-all"
                       style={{ width: `${((scores[criterion.id] ?? 0) / criterion.maxScore) * 100}%` }} />
@@ -366,21 +370,21 @@ export default function QiymetlendirmePage() {
           </div>
 
           {saveMessage && (
-            <div className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
+            <div role="status" aria-live="polite" className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
               saveMessage.includes('ugurla') ? 'border border-green-300 bg-green-50 text-green-800' : 'border border-amber-300 bg-amber-50 text-amber-800'
             }`}>
-              {saveMessage.includes('ugurla') ? <Check className="size-4 shrink-0" /> : <AlertTriangle className="size-4 shrink-0" />}
+              {saveMessage.includes('ugurla') ? <Check className="size-4 shrink-0" aria-hidden="true" /> : <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />}
               <span>{saveMessage}</span>
             </div>
           )}
 
           <div className="flex justify-end gap-3">
             <Button variant="outline" disabled={!selectedTeam || saving} onClick={() => handleSave(false)}>
-              {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {saving && <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
               Qaralama saxla
             </Button>
             <Button disabled={!selectedTeam || submitting} className="bg-[#0D47A1] text-white" onClick={() => handleSave(true)}>
-              {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {submitting && <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
               Qiymetlendirmeni gonder
             </Button>
           </div>

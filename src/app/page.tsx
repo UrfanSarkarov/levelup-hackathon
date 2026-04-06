@@ -183,7 +183,7 @@ function CountdownTimer() {
           <div aria-hidden="true" className="text-2xl sm:text-4xl font-bold text-[#0D47A1] tabular-nums">
             {String(u.value).padStart(2, "0")}
           </div>
-          <div className="text-xs sm:text-sm text-[#718096] mt-1">{u.label}</div>
+          <div className="text-xs sm:text-sm text-[#5A6A7E] mt-1">{u.label}</div>
         </div>
       ))}
     </div>
@@ -393,7 +393,7 @@ export default function Home() {
           </p>
 
           <div className="mb-8">
-            <p className="text-sm text-[#718096] mb-3">Qeydiyyatın bağlanmasına:</p>
+            <p className="text-sm text-[#5A6A7E] mb-3">Qeydiyyatın bağlanmasına:</p>
             <CountdownTimer />
           </div>
 
@@ -406,7 +406,7 @@ export default function Home() {
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <div className="text-2xl font-bold text-[#0D47A1]">{s.value}</div>
-                <div className="text-[#718096]">{s.label}</div>
+                <div className="text-[#5A6A7E]">{s.label}</div>
               </div>
             ))}
           </div>
@@ -437,12 +437,12 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-4">
             <div className="light-card p-6 text-center">
               <CalendarIcon className="w-16 h-16 mx-auto mb-3" />
-              <div className="text-sm text-[#718096]">Tarix</div>
+              <div className="text-sm text-[#5A6A7E]">Tarix</div>
               <div className="font-semibold text-[#1A1A2E]">12–15 May 2026</div>
             </div>
             <div className="light-card p-6 text-center">
               <MapIcon className="w-16 h-16 mx-auto mb-3" />
-              <div className="text-sm text-[#718096]">Məkan</div>
+              <div className="text-sm text-[#5A6A7E]">Məkan</div>
               <div className="font-semibold text-[#1A1A2E]">Bakı</div>
             </div>
           </div>
@@ -481,7 +481,7 @@ export default function Home() {
       <Section id="istiqametler">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] mb-4">İstiqamətlər</h2>
-          <p className="text-[#718096]">Ağıllı, təhlükəsiz və dayanıqlı şəhərlər üçün texnoloji əsaslı innovativ həllər yarat!</p>
+          <p className="text-[#5A6A7E]">Ağıllı, təhlükəsiz və dayanıqlı şəhərlər üçün texnoloji əsaslı innovativ həllər yarat!</p>
           <div className="w-20 h-1 bg-[#0D47A1] mx-auto rounded-full mt-4" />
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -510,7 +510,7 @@ export default function Home() {
             { place: "3-cü yer", amount: "1 000 AZN", accent: "border-t-[#6BBF6B]" },
           ].map((p) => (
             <div key={p.place} className={`light-card p-8 text-center border-t-4 ${p.accent}`}>
-              <div className="text-sm text-[#718096] mb-2">{p.place}</div>
+              <div className="text-sm text-[#5A6A7E] mb-2">{p.place}</div>
               <div className="text-2xl font-bold text-[#1A1A2E]">{p.amount}</div>
             </div>
           ))}
@@ -543,7 +543,7 @@ export default function Home() {
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     <span className="sm:hidden text-xl">{p.icon}</span>
                     <span className="text-xs font-semibold bg-[#0D47A1]/10 text-[#0D47A1] px-3 py-1 rounded-full">{p.phase}</span>
-                    <span className="text-xs text-[#718096]">{p.date}</span>
+                    <span className="text-xs text-[#5A6A7E]">{p.date}</span>
                     {p.active && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Aktiv</span>}
                   </div>
                   <h3 className="text-lg font-bold text-[#1A1A2E] mb-3">{p.title}</h3>
@@ -588,7 +588,7 @@ export default function Home() {
           <p className="text-[#4A5568] mb-6 max-w-xl mx-auto">
             Komandanı formalaşdır, qeydiyyatdan keç və şəhərlərin gələcəyini birlikdə formalaşdır!
           </p>
-          <p className="text-sm text-[#718096] mb-8">Komanda: min 3 — maks 5 nəfər | Qeydiyyat bağlanışı: 25 Aprel 2026</p>
+          <p className="text-sm text-[#5A6A7E] mb-8">Komanda: min 3 — maks 5 nəfər | Qeydiyyat bağlanışı: 25 Aprel 2026</p>
           <Link href="/qeydiyyat" className="inline-block bg-[#0D47A1] hover:bg-[#1565C0] text-white font-bold px-10 py-4 rounded-xl text-lg transition-all animate-pulse-glow">
             İndi qeydiyyatdan keç
           </Link>

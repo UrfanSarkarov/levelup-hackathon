@@ -119,7 +119,7 @@ export default function ProfilPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} aria-label="Profil məlumatları formu">
         <Card>
           <CardHeader>
             <CardTitle>Sexsi Melumatlar</CardTitle>
@@ -137,9 +137,10 @@ export default function ProfilPage() {
                 </div>
                 <button
                   type="button"
+                  aria-label="Profil şəklini dəyiş"
                   className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full border-2 border-white bg-[#0D47A1] text-white"
                 >
-                  <Camera className="size-4" />
+                  <Camera className="size-4" aria-hidden="true" />
                 </button>
               </div>
               <div>
@@ -153,8 +154,9 @@ export default function ProfilPage() {
             <Separator />
 
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-8" role="status" aria-label="Yüklənir">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Yüklənir...</span>
               </div>
             ) : (
               <>
@@ -250,9 +252,9 @@ export default function ProfilPage() {
                     disabled={saving}
                   >
                     {saving ? (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
+                      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
                     ) : (
-                      <Save className="mr-2 size-4" />
+                      <Save className="mr-2 size-4" aria-hidden="true" />
                     )}
                     Yadda saxla
                   </Button>

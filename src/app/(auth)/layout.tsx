@@ -11,7 +11,7 @@ export default function AuthLayout({
       <div className="mb-8">
         <Image
           src="/levelup-logo-new.svg"
-          alt="Level UP"
+          alt="Level UP Hackathon - Ana səhifəyə qayıt"
           width={180}
           height={60}
           priority
@@ -20,12 +20,12 @@ export default function AuthLayout({
       </div>
 
       {/* Auth content */}
-      <div className="w-full max-w-md">{children}</div>
+      <main id="main-content" role="main" aria-label="Giriş" className="w-full max-w-md">{children}</main>
 
       {/* Footer */}
-      <p className="mt-8 text-sm text-white/60">
+      <footer className="mt-8 text-sm text-white/60">
         &copy; 2026 Level UP Hackathon &mdash; WUF13 Bak&#305;
-      </p>
+      </footer>
     </div>
   );
 }

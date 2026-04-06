@@ -76,7 +76,7 @@ export function AppSidebar({ profile, role }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" aria-label="Əsas naviqasiya">
       {/* ── Logo ─────────────────────────────────────────────────────── */}
       <SidebarHeader>
         <SidebarMenu>
