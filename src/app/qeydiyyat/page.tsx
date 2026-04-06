@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -43,11 +43,10 @@ function SectionTitle({ step, title, subtitle }: { step: number; title: string; 
   );
 }
 
-let inputIdCounter = 0;
 function InputField({ label, required, type = "text", value, onChange, placeholder, hint, pattern, inputMode }: {
   label: string; required?: boolean; type?: string; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string; pattern?: string; inputMode?: "text" | "tel" | "email" | "numeric";
 }) {
-  const [id] = useState(() => `input-${++inputIdCounter}`);
+  const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   return (
     <div>
@@ -63,7 +62,7 @@ function InputField({ label, required, type = "text", value, onChange, placehold
 function TextArea({ label, required, value, onChange, placeholder, hint, maxLength }: {
   label: string; required?: boolean; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string; maxLength?: number;
 }) {
-  const [id] = useState(() => `textarea-${++inputIdCounter}`);
+  const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const charId = maxLength ? `${id}-chars` : undefined;
   const describedBy = [hintId, charId].filter(Boolean).join(' ') || undefined;
@@ -84,7 +83,7 @@ function TextArea({ label, required, value, onChange, placeholder, hint, maxLeng
 function SelectField({ label, required, value, onChange, options, placeholder }: {
   label: string; required?: boolean; value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
 }) {
-  const [id] = useState(() => `select-${++inputIdCounter}`);
+  const id = useId();
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-[#1A1A2E] mb-1.5">{label} {required && <span className="text-red-500" aria-hidden="true">*</span>}</label>

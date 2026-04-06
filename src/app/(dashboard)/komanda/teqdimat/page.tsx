@@ -118,6 +118,7 @@ export default function TeqdimatPage() {
   const saveSubmission = async (isDraft: boolean) => {
     if (!teamId || !hackathonId) return;
 
+    setErrorMsg(null);
     if (isDraft) setSaving(true);
     else setSubmitting(true);
 

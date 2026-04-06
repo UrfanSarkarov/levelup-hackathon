@@ -244,8 +244,14 @@ body {
   outline-offset: 2px;
 }
 
-/* WCAG 2.2 SC 2.5.8 — Target Size (Minimum 24x24px) */
-button, a, [role="button"], input[type="checkbox"], input[type="radio"], select, summary {
+/* WCAG 2.2 SC 2.5.8 — Target Size (Minimum 24x24px)
+   Applied to standalone interactive controls only.
+   Links excluded as they are mostly inline in text. */
+button:not(.sr-only),
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+summary {
   min-width: 24px;
   min-height: 24px;
 }

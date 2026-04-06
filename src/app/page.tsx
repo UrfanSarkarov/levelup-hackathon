@@ -358,8 +358,8 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
           </svg>
         </button>
       </h3>
-      <div id={answerId} role="region" aria-labelledby={`faq-q-${index}`} hidden={!open} className={`overflow-hidden transition-all duration-300 ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
-        <p className="px-5 pb-5 text-[#4A5568] leading-relaxed">{a}</p>
+      <div id={answerId} role="region" aria-labelledby={`faq-q-${index}`} aria-hidden={!open} className={`overflow-hidden transition-all duration-300 ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 invisible"}`}>
+        <p className="px-5 pb-5 text-[#4A5568] leading-relaxed" tabIndex={open ? 0 : -1}>{a}</p>
       </div>
     </div>
   );
