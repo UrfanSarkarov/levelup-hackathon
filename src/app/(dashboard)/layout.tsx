@@ -107,7 +107,7 @@ export default async function DashboardLayout({
       <AppSidebar profile={userProfile} role={userRole} />
       <SidebarInset>
         <AppHeader profile={userProfile} />
-        <div className="flex-1 p-4 md:p-6">{children}</div>
+        <main id="main-content" role="main" aria-label="Əsas məzmun" className="flex-1 p-4 md:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

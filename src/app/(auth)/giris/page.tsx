@@ -19,7 +19,7 @@ import {
 /* ─── Spinner ─── */
 function Spinner() {
   return (
-    <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24">
+    <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true" role="status">
       <circle
         className="opacity-25"
         cx="12"
@@ -116,7 +116,7 @@ export default function GirisPage() {
       <CardContent className="pt-6">
         {/* ─── Error banner ─── */}
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+          <div role="alert" aria-live="assertive" className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
             {error}
           </div>
         )}
@@ -154,6 +154,7 @@ export default function GirisPage() {
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
+                aria-label={showPass ? "Şifrəni gizlət" : "Şifrəni göstər"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#718096] hover:text-[#0D47A1] transition-colors"
               >
                 {showPass ? "Gizlə" : "Göstər"}

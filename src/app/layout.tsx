@@ -29,7 +29,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="az" className={cn("antialiased", inter.variable, "font-sans", geist.variable)}>
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        <a href="#main-content" className="skip-nav">
+          Əsas məzmuna keç
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

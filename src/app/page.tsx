@@ -8,7 +8,7 @@ import Image from "next/image";
 
 function CalendarIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
       <rect x="12" y="18" width="56" height="50" rx="6" stroke="#6BBF6B" strokeWidth="3" fill="none"/>
       <line x1="12" y1="32" x2="68" y2="32" stroke="#6BBF6B" strokeWidth="3"/>
       <line x1="28" y1="12" x2="28" y2="24" stroke="#6BBF6B" strokeWidth="3" strokeLinecap="round"/>
@@ -26,7 +26,7 @@ function CalendarIcon({ className }: { className?: string }) {
 
 function MapIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
       <path d="M15 60L30 50L50 58L65 45V20L50 33L30 25L15 35V60Z" stroke="#6BBF6B" strokeWidth="3" fill="none" strokeLinejoin="round"/>
       <path d="M30 25V50" stroke="#6BBF6B" strokeWidth="2" strokeDasharray="4 3"/>
       <path d="M50 33V58" stroke="#6BBF6B" strokeWidth="2" strokeDasharray="4 3"/>
@@ -39,7 +39,7 @@ function MapIcon({ className }: { className?: string }) {
 
 function SmartMobilityIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ağıllı mobillik">
       <circle cx="50" cy="50" r="48" fill="#6BBF6B"/>
       <g stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path d="M28 62C28 62 30 52 33 48C36 44 42 42 50 42C58 42 64 44 67 48C70 52 72 62 72 62"/>
@@ -60,7 +60,7 @@ function SmartMobilityIcon({ className }: { className?: string }) {
 
 function SmartHousingIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ağıllı mənzil idarəetməsi">
       <circle cx="50" cy="50" r="48" fill="#6BBF6B"/>
       <g stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <rect x="25" y="30" width="50" height="40" rx="4"/>
@@ -81,7 +81,7 @@ function SmartHousingIcon({ className }: { className?: string }) {
 
 function DisasterResilienceIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fəlakət dayanıqlılığı">
       <circle cx="50" cy="50" r="48" fill="#6BBF6B"/>
       <g stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <rect x="26" y="28" width="48" height="38" rx="4"/>
@@ -102,7 +102,7 @@ function DisasterResilienceIcon({ className }: { className?: string }) {
 
 function GreenTechIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Yaşıl texnologiyalar">
       <circle cx="50" cy="50" r="48" fill="#6BBF6B"/>
       <g stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path d="M50 75V50"/>
@@ -172,7 +172,7 @@ function CountdownTimer() {
   }, [targetDate]);
 
   return (
-    <div className="flex gap-3 sm:gap-4 justify-center">
+    <div role="timer" aria-live="polite" aria-atomic="true" aria-label={`Qeydiyyatın bağlanmasına ${timeLeft.days} gün ${timeLeft.hours} saat ${timeLeft.minutes} dəqiqə qalıb`} className="flex gap-3 sm:gap-4 justify-center">
       {[
         { label: "Gün", value: timeLeft.days },
         { label: "Saat", value: timeLeft.hours },
@@ -180,7 +180,7 @@ function CountdownTimer() {
         { label: "Saniyə", value: timeLeft.seconds },
       ].map((u) => (
         <div key={u.label} className="bg-white rounded-xl p-3 sm:p-4 min-w-[70px] sm:min-w-[85px] text-center shadow-md border border-gray-100">
-          <div className="text-2xl sm:text-4xl font-bold text-[#0D47A1] tabular-nums">
+          <div aria-hidden="true" className="text-2xl sm:text-4xl font-bold text-[#0D47A1] tabular-nums">
             {String(u.value).padStart(2, "0")}
           </div>
           <div className="text-xs sm:text-sm text-[#718096] mt-1">{u.label}</div>
@@ -211,7 +211,7 @@ function Navbar() {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 backdrop-blur-md shadow-md" : "bg-white/80 backdrop-blur-sm"}`}>
+    <nav role="navigation" aria-label="Əsas naviqasiya" className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 backdrop-blur-md shadow-md" : "bg-white/80 backdrop-blur-sm"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Left: WUF13 logo + Level Up new logo */}
@@ -239,7 +239,7 @@ function Navbar() {
           </div>
 
           {/* Mobile hamburger */}
-          <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden text-[#1A1A2E] p-2" aria-label="Menyu">
+          <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden text-[#1A1A2E] p-2" aria-label="Menyu" aria-expanded={isOpen} aria-controls="mobile-nav-menu">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -252,7 +252,7 @@ function Navbar() {
       </div>
 
       {isOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
+        <div id="mobile-nav-menu" role="menu" className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
           <div className="px-4 py-4 space-y-3">
             {links.map((l) => (
               <a key={l.href} href={l.href} onClick={() => setIsOpen(false)} className="block text-[#4A5568] hover:text-[#0D47A1] transition-colors py-2 font-medium">
@@ -340,17 +340,25 @@ const faqs = [
   { q: "Təlim proqramı nə əhatə edir?", a: "Hakatondan əvvəl 2–15 May tarixlərində 7 mövzu üzrə təlim proqramı keçirilir. Təlimlər Design Thinking, süni intellekt tətbiqləri, biznes modeli hazırlanması, pitch təqdimatı hazırlığı və digər vacib mövzuları əhatə edir. Bundan əlavə, 7 sahə üzrə mentor dəstəyi hibrid formatda təmin edilir." },
 ];
 
-function FAQItem({ q, a }: { q: string; a: string }) {
+function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
   const [open, setOpen] = useState(false);
+  const answerId = `faq-answer-${index}`;
   return (
     <div className="light-card overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 transition-colors">
-        <span className="font-medium text-[#1A1A2E] pr-4">{q}</span>
-        <svg className={`w-5 h-5 text-[#0D47A1] flex-shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      <div className={`overflow-hidden transition-all duration-300 ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
+      <h3>
+        <button
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={answerId}
+          className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 transition-colors"
+        >
+          <span className="font-medium text-[#1A1A2E] pr-4">{q}</span>
+          <svg className={`w-5 h-5 text-[#0D47A1] flex-shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </h3>
+      <div id={answerId} role="region" aria-labelledby={`faq-q-${index}`} hidden={!open} className={`overflow-hidden transition-all duration-300 ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
         <p className="px-5 pb-5 text-[#4A5568] leading-relaxed">{a}</p>
       </div>
     </div>
@@ -363,8 +371,9 @@ export default function Home() {
     <>
       <Navbar />
 
+      <main id="main-content" role="main">
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 pt-20 overflow-hidden bg-gradient-to-br from-white via-[#F0F4F8] to-[#E3EDF7]">
+      <section aria-labelledby="hero-heading" className="relative min-h-screen flex items-center justify-center px-4 pt-20 overflow-hidden bg-gradient-to-br from-white via-[#F0F4F8] to-[#E3EDF7]">
         <div className="absolute top-1/4 -right-32 w-96 h-96 bg-[#0D47A1]/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 -left-32 w-96 h-96 bg-[#2EC4B6]/5 rounded-full blur-3xl" />
 
@@ -373,7 +382,7 @@ export default function Home() {
             Level Up Hackathon | 12-15 May 2026 | Bakı
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight">
+          <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight">
             <span className="gradient-text">Level UP</span>
             <br />
             <span className="text-[#1A1A2E]">Urban Innovation Hackathon</span>
@@ -458,7 +467,7 @@ export default function Home() {
               "\"Made in Azerbaijan\" urban texnologiyalarının böyüməsini dəstəkləmək.",
             ].map((m) => (
               <div key={m} className="flex items-start gap-3 p-3 rounded-lg bg-[#F5F7FA]">
-                <svg className="w-5 h-5 text-[#6BBF6B] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-[#6BBF6B] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                 </svg>
                 <span className="text-[#4A5568] text-sm">{m}</span>
@@ -594,13 +603,15 @@ export default function Home() {
         </div>
         <div className="max-w-2xl mx-auto space-y-4">
           {faqs.map((f, i) => (
-            <FAQItem key={i} q={f.q} a={f.a} />
+            <FAQItem key={i} q={f.q} a={f.a} index={i} />
           ))}
         </div>
       </Section>
 
+      </main>
+
       {/* ── FOOTER ── */}
-      <footer id="elaqe" className="bg-[#2D3748] text-white py-12 px-4 sm:px-6">
+      <footer id="elaqe" role="contentinfo" aria-label="Saytın alt hissəsi" className="bg-[#2D3748] text-white py-12 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid sm:grid-cols-3 gap-8 mb-8">
             <div>
@@ -618,7 +629,7 @@ export default function Home() {
               <a href="https://vstto.com" target="_blank" rel="noopener noreferrer" className="text-sm text-[#2EC4B6] hover:underline block mt-1">vstto.com</a>
               <a href="mailto:info@leveluphackapp.com" className="text-sm text-[#2EC4B6] hover:underline block mt-1">info@leveluphackapp.com</a>
               <a href="https://wa.me/994515678217" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-[#25D366] hover:underline mt-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 +994 51 567 82 17
               </a>
             </div>
@@ -635,7 +646,7 @@ export default function Home() {
           {/* Instagram */}
           <div className="flex justify-center mb-6">
             <a href="#" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-300 hover:text-[#E1306C] transition-colors">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
               <span className="text-sm">Instagram</span>
             </a>
           </div>

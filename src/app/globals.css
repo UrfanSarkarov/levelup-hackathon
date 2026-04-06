@@ -207,3 +207,94 @@ body {
     @apply font-sans;
   }
 }
+
+/* ── WCAG 2.2 Accessibility ──────────────────────────────── */
+
+/* Skip navigation link */
+.skip-nav {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+}
+.skip-nav:focus {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  width: auto;
+  height: auto;
+  padding: 12px 24px;
+  background: #0D47A1;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  text-decoration: none;
+  outline: 3px solid #2EC4B6;
+  outline-offset: 2px;
+}
+
+/* WCAG 2.2 SC 2.4.7 — Enhanced focus visible for all interactive elements */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* WCAG 2.2 SC 2.5.8 — Target Size (Minimum 24x24px) */
+button, a, [role="button"], input[type="checkbox"], input[type="radio"], select, summary {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+/* WCAG 2.2 SC 2.4.11 — Focus Not Obscured (Minimum) */
+:focus-visible {
+  scroll-margin: 8px;
+}
+[data-slot="dialog-content"]:focus-within,
+[data-slot="popover-content"]:focus-within,
+[data-slot="dropdown-menu-content"]:focus-within {
+  z-index: 100;
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Prefers reduced motion — WCAG 2.3.3 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-fade-in-up,
+  .animate-pulse-glow {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  .light-card, .track-card {
+    border: 2px solid CanvasText;
+  }
+  button, a, [role="button"] {
+    border: 1px solid ButtonText;
+  }
+}

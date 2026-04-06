@@ -43,15 +43,19 @@ function SectionTitle({ step, title, subtitle }: { step: number; title: string; 
   );
 }
 
+let inputIdCounter = 0;
 function InputField({ label, required, type = "text", value, onChange, placeholder, hint, pattern, inputMode }: {
   label: string; required?: boolean; type?: string; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string; pattern?: string; inputMode?: "text" | "tel" | "email" | "numeric";
 }) {
+  const [id] = useState(() => `input-${++inputIdCounter}`);
+  const hintId = hint ? `${id}-hint` : undefined;
   return (
     <div>
-      <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required} pattern={pattern} inputMode={inputMode}
+      <label htmlFor={id} className="block text-sm font-medium text-[#1A1A2E] mb-1.5">{label} {required && <span className="text-red-500" aria-hidden="true">*</span>}</label>
+      <input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required} pattern={pattern} inputMode={inputMode}
+        aria-required={required} aria-describedby={hintId}
         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all" />
-      {hint && <p className="text-xs text-[#718096] mt-1">{hint}</p>}
+      {hint && <p id={hintId} className="text-xs text-[#718096] mt-1">{hint}</p>}
     </div>
   );
 }
@@ -59,14 +63,19 @@ function InputField({ label, required, type = "text", value, onChange, placehold
 function TextArea({ label, required, value, onChange, placeholder, hint, maxLength }: {
   label: string; required?: boolean; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string; maxLength?: number;
 }) {
+  const [id] = useState(() => `textarea-${++inputIdCounter}`);
+  const hintId = hint ? `${id}-hint` : undefined;
+  const charId = maxLength ? `${id}-chars` : undefined;
+  const describedBy = [hintId, charId].filter(Boolean).join(' ') || undefined;
   return (
     <div>
-      <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required} maxLength={maxLength} rows={4}
+      <label htmlFor={id} className="block text-sm font-medium text-[#1A1A2E] mb-1.5">{label} {required && <span className="text-red-500" aria-hidden="true">*</span>}</label>
+      <textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required} maxLength={maxLength} rows={4}
+        aria-required={required} aria-describedby={describedBy}
         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all resize-y" />
       <div className="flex justify-between mt-1">
-        {hint && <p className="text-xs text-[#718096]">{hint}</p>}
-        {maxLength && <p className="text-xs text-[#718096] ml-auto">{value.length}/{maxLength}</p>}
+        {hint && <p id={hintId} className="text-xs text-[#718096]">{hint}</p>}
+        {maxLength && <p id={charId} className="text-xs text-[#718096] ml-auto" aria-live="polite">{value.length}/{maxLength}</p>}
       </div>
     </div>
   );
@@ -75,10 +84,11 @@ function TextArea({ label, required, value, onChange, placeholder, hint, maxLeng
 function SelectField({ label, required, value, onChange, options, placeholder }: {
   label: string; required?: boolean; value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
 }) {
+  const [id] = useState(() => `select-${++inputIdCounter}`);
   return (
     <div>
-      <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
-      <select value={value} onChange={(e) => onChange(e.target.value)} required={required}
+      <label htmlFor={id} className="block text-sm font-medium text-[#1A1A2E] mb-1.5">{label} {required && <span className="text-red-500" aria-hidden="true">*</span>}</label>
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} required={required} aria-required={required}
         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all">
         <option value="">{placeholder || "Seçin..."}</option>
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -92,11 +102,11 @@ function MemberForm({ index, data, onChange, isRequired, isLeader }: {
 }) {
   const label = isLeader ? "Komanda Rəhbəri (İştirakçı 1)" : `İştirakçı ${index + 1}${index >= 3 ? " (İsteğe bağlı)" : ""}`;
   return (
-    <div className="light-card p-6">
-      <h3 className="text-lg font-semibold text-[#0D47A1] mb-5 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-full bg-[#0D47A1]/10 flex items-center justify-center text-sm font-bold">{index + 1}</span>
+    <fieldset className="light-card p-6">
+      <legend className="text-lg font-semibold text-[#0D47A1] mb-5 flex items-center gap-2">
+        <span className="w-8 h-8 rounded-full bg-[#0D47A1]/10 flex items-center justify-center text-sm font-bold" aria-hidden="true">{index + 1}</span>
         {label}
-      </h3>
+      </legend>
       <div className="grid sm:grid-cols-2 gap-4">
         <InputField label="Ad" required={isRequired} value={data.ad} onChange={(v) => onChange("ad", v)} />
         <InputField label="Soyad" required={isRequired} value={data.soyad} onChange={(v) => onChange("soyad", v)} />
@@ -110,7 +120,7 @@ function MemberForm({ index, data, onChange, isRequired, isLeader }: {
           <InputField label="İşləyirsinizsə, müəssisənin adı və vəzifəniz" value={data.is} onChange={(v) => onChange("is", v)} />
         </div>
       </div>
-    </div>
+    </fieldset>
   );
 }
 
@@ -118,10 +128,10 @@ function MemberForm({ index, data, onChange, isRequired, isLeader }: {
 function TermsModal({ open, onClose, onAccept }: { open: boolean; onClose: () => void; onAccept: () => void }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col animate-fade-in-up">
         <div className="p-6 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-[#1A1A2E]">İştirak Şərtləri və Razılıq</h3>
+          <h3 id="terms-modal-title" className="text-xl font-bold text-[#1A1A2E]">İştirak Şərtləri və Razılıq</h3>
           <p className="text-sm text-[#718096] mt-1">Aşağıdakı şərtləri diqqətlə oxuyun</p>
         </div>
         <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-[#4A5568] leading-relaxed">

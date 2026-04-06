@@ -107,7 +107,7 @@ export function AppHeader({ profile }: AppHeaderProps) {
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+    <header role="banner" aria-label="Əsas başlıq" className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
       {/* ── Mobile sidebar trigger ───────────────────────────────────── */}
       <SidebarTrigger className="-ml-1" />
 
@@ -138,7 +138,7 @@ export function AppHeader({ profile }: AppHeaderProps) {
       </Breadcrumb>
 
       {/* ── Right side actions ────────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
+      <nav aria-label="İstifadəçi əməliyyatları" className="flex items-center gap-2">
         {/* Notification bell */}
         <Button
           variant="ghost"
@@ -152,7 +152,7 @@ export function AppHeader({ profile }: AppHeaderProps) {
 
         {/* User avatar dropdown */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <DropdownMenuTrigger aria-label="İstifadəçi menyusu" className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <Avatar size="sm">
               {profile.avatar_url ? (
                 <AvatarImage
@@ -198,7 +198,7 @@ export function AppHeader({ profile }: AppHeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </nav>
     </header>
   );
 }
