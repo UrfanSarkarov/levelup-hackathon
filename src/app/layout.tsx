@@ -11,13 +11,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Level UP — Urban Innovation Hackathon | WUF13 Bakı 2026",
+  title: "Level UP Hakatonu | Bakı",
   description:
-    "WUF13 çərçivəsində keçirilən 36 saatlıq urban innovasiya hakatonu. Şəhərlərin gələcəyini formalaşdır!",
+    "Ağıllı ev sistemləri, avtomatlaşdırma və real IOT sistemlərinin qarşılıqlı inteqrasiyası həllərinə yönəlmiş 36 saatlıq innovativ həllər yarışı.",
   openGraph: {
-    title: "Level UP — Urban Innovation Hackathon",
+    title: "Level UP Hakatonu",
     description:
-      "36 saatda ideyadan prototipə. WUF13 Bakı 2026",
+      "IoT, ağıllı ev sistemləri və avtomatlaşdırma sahəsində 36 saatlıq innovasiya hakatonu.",
     type: "website",
   },
 };

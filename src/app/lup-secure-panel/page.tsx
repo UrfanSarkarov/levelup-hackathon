@@ -300,12 +300,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <h3 className="text-sm font-bold text-[#1A1A2E] mb-4">Sürətli Məlumat</h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-[#718096]">Qeydiyyat son tarix</span>
-                <span className="font-semibold text-[#1A1A2E]">25 Aprel 2026</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-[#718096]">Seçiləcək komanda</span>
-                <span className="font-semibold text-[#1A1A2E]">15</span>
+                <span className="text-[#718096]">Hakaton</span>
+                <span className="font-semibold text-[#1A1A2E]">Level UP</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
                 <span className="text-[#718096]">Qeydiyyat sayı</span>

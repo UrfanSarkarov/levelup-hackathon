@@ -24,7 +24,7 @@ export default function AuthLayout({
 
       {/* Footer */}
       <footer className="mt-8 text-sm text-white/60">
-        &copy; 2026 Level UP Hackathon &mdash; WUF13 Bak&#305;
+        &copy; 2026 Level UP Hakatonu &mdash; Bak&#305;
       </footer>
     </div>
   );

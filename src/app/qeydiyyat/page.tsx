@@ -26,10 +26,15 @@ const initialForm: FormData = {
   raziliq: false,
 };
 
-const istiqametler = ["Smart Mobility", "Smart & Circular Housing Resources", "AI-Driven Disaster Resilience", "Green Technology"];
+const istiqametler = [
+  "Qarşılıqlı əlaqəli mikrocihaz ekosisteminin qurulması",
+  "IoT əsaslı avtomatlaşdırma həlləri",
+  "Evlərin və şəhərlərin ağıllı idarəetmə və nəzarət sistemləri",
+  "Təhlükəsiz və dayanıqlı sistemlərin yaradılması",
+];
 const kurslar = ["1-ci kurs", "2-ci kurs", "3-cü kurs", "4-cü kurs", "5-ci kurs", "6-cı kurs"];
-const prototipSecimler = ["Mobil tətbiq prototipi", "Veb platforması", "IoT cihaz/sensor prototipi", "AI/ML modeli", "Dashboard/Vizualizasiya aləti", "Hardware prototipi", "Digər"];
-const melumatMenbeler = ["Sosial media", "Universitetdəki infosessiya", "WUF13 Roadshow", "Dost tövsiyəsi", "Digər"];
+const prototipSecimler = ["IoT cihaz/sensor prototipi", "Mobil tətbiq prototipi", "Veb platforması", "Hardware prototipi", "Ağıllı ev avtomatlaşdırması", "Dashboard/Vizualizasiya aləti", "Digər"];
+const melumatMenbeler = ["Sosial media", "Universitetdəki infosessiya", "Dost tövsiyəsi", "Veb-sayt", "Digər"];
 
 function SectionTitle({ step, title, subtitle }: { step: number; title: string; subtitle?: string }) {
   return (
@@ -38,7 +43,7 @@ function SectionTitle({ step, title, subtitle }: { step: number; title: string; 
         <span className="flex-shrink-0 w-10 h-10 rounded-full bg-[#0D47A1]/10 text-[#0D47A1] font-bold flex items-center justify-center text-lg">{step}</span>
         <h2 className="text-xl sm:text-2xl font-bold text-[#1A1A2E]">{title}</h2>
       </div>
-      {subtitle && <p className="text-sm text-[#718096] pl-[52px]">{subtitle}</p>}
+      {subtitle && <p className="text-sm text-[#5A6A7E] pl-[52px]">{subtitle}</p>}
     </div>
   );
 }
@@ -54,7 +59,7 @@ function InputField({ label, required, type = "text", value, onChange, placehold
       <input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required} pattern={pattern} inputMode={inputMode}
         aria-required={required} aria-describedby={hintId}
         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all" />
-      {hint && <p id={hintId} className="text-xs text-[#718096] mt-1">{hint}</p>}
+      {hint && <p id={hintId} className="text-xs text-[#5A6A7E] mt-1">{hint}</p>}
     </div>
   );
 }
@@ -73,8 +78,8 @@ function TextArea({ label, required, value, onChange, placeholder, hint, maxLeng
         aria-required={required} aria-describedby={describedBy}
         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all resize-y" />
       <div className="flex justify-between mt-1">
-        {hint && <p id={hintId} className="text-xs text-[#718096]">{hint}</p>}
-        {maxLength && <p id={charId} className="text-xs text-[#718096] ml-auto" aria-live="polite">{value.length}/{maxLength}</p>}
+        {hint && <p id={hintId} className="text-xs text-[#5A6A7E]">{hint}</p>}
+        {maxLength && <p id={charId} className="text-xs text-[#5A6A7E] ml-auto" aria-live="polite">{value.length}/{maxLength}</p>}
       </div>
     </div>
   );
@@ -131,12 +136,12 @@ function TermsModal({ open, onClose, onAccept }: { open: boolean; onClose: () =>
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col animate-fade-in-up">
         <div className="p-6 border-b border-gray-100">
           <h3 id="terms-modal-title" className="text-xl font-bold text-[#1A1A2E]">İştirak Şərtləri və Razılıq</h3>
-          <p className="text-sm text-[#718096] mt-1">Aşağıdakı şərtləri diqqətlə oxuyun</p>
+          <p className="text-sm text-[#5A6A7E] mt-1">Aşağıdakı şərtləri diqqətlə oxuyun</p>
         </div>
         <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-[#4A5568] leading-relaxed">
           <div className="flex items-start gap-3">
             <span className="text-[#0D47A1] font-bold mt-0.5">1.</span>
-            <p>Mən, Level UP Hackathon-un bütün qaydalarını, etika və etiket normalarını oxudum və qəbul edirəm. Hakaton müddətində təşkilat komitəsinin qərarlarına hörmətlə yanaşacağıma söz verirəm.</p>
+            <p>Mən, Level UP Hakatonu-un bütün qaydalarını, etika və etiket normalarını oxudum və qəbul edirəm. Hakaton müddətində təşkilat komitəsinin qərarlarına hörmətlə yanaşacağıma söz verirəm.</p>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-[#0D47A1] font-bold mt-0.5">2.</span>
@@ -152,7 +157,7 @@ function TermsModal({ open, onClose, onAccept }: { open: boolean; onClose: () =>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-[#0D47A1] font-bold mt-0.5">5.</span>
-            <p>Mən, şəxsi məlumatlarımın yalnız tədbirin idarə edilməsi üçün emal ediləcəyini qəbul edirəm. Məlumatlarım üçüncü tərəflərlə paylaşılmayacaq və yalnız Level UP Hackathon məqsədləri üçün istifadə olunacaq.</p>
+            <p>Mən, şəxsi məlumatlarımın yalnız tədbirin idarə edilməsi üçün emal ediləcəyini qəbul edirəm. Məlumatlarım üçüncü tərəflərlə paylaşılmayacaq və yalnız Level UP Hakatonu məqsədləri üçün istifadə olunacaq.</p>
           </div>
         </div>
         <div className="p-6 border-t border-gray-100 flex gap-3">
@@ -258,9 +263,9 @@ export default function QeydiyyatPage() {
           <div className="bg-[#0D47A1]/5 rounded-xl p-4 mb-6 text-left">
             <p className="text-sm text-[#4A5568] mb-1">Giriş məlumatlarınız:</p>
             <p className="text-[#1A1A2E] font-medium">E-poçt: <span className="text-[#0D47A1]">{form.members[0].email}</span></p>
-            <p className="text-[#1A1A2E] font-medium">Parol: <span className="text-[#718096]">sizin təyin etdiyiniz parol</span></p>
+            <p className="text-[#1A1A2E] font-medium">Parol: <span className="text-[#5A6A7E]">sizin təyin etdiyiniz parol</span></p>
           </div>
-          <p className="text-sm text-[#718096] mb-8">Nəticələr 2 May 2026-dək e-poçt vasitəsilə bildiriləcək.</p>
+          <p className="text-sm text-[#5A6A7E] mb-8">Nəticələr e-poçt vasitəsilə bildiriləcək.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/giris" className="inline-block bg-[#0D47A1] hover:bg-[#1565C0] text-white font-bold px-8 py-3 rounded-xl transition-all">
               Daxil ol
@@ -287,13 +292,13 @@ export default function QeydiyyatPage() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-[#1A1A2E] mb-2">Qeydiyyat tamamlandı!</h1>
-            <p className="text-[#718096]">İndi komanda hesabınızı yaradın</p>
+            <p className="text-[#5A6A7E]">İndi komanda hesabınızı yaradın</p>
           </div>
 
           <div className="bg-[#F5F7FA] rounded-xl p-4 mb-6">
-            <p className="text-xs text-[#718096] uppercase tracking-wide mb-2">Komanda</p>
+            <p className="text-xs text-[#5A6A7E] uppercase tracking-wide mb-2">Komanda</p>
             <p className="font-semibold text-[#1A1A2E]">{form.komandaAdi}</p>
-            <p className="text-sm text-[#718096] mt-1">Kapitan: {captain.ad} {captain.soyad}</p>
+            <p className="text-sm text-[#5A6A7E] mt-1">Kapitan: {captain.ad} {captain.soyad}</p>
           </div>
 
           <div className="space-y-4">
@@ -303,9 +308,9 @@ export default function QeydiyyatPage() {
                 type="email"
                 value={captain.email}
                 disabled
-                className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-2.5 text-[#718096] cursor-not-allowed"
+                className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-2.5 text-[#5A6A7E] cursor-not-allowed"
               />
-              <p className="text-xs text-[#718096] mt-1">Qeydiyyat zamanı daxil etdiyiniz e-poçt</p>
+              <p className="text-xs text-[#5A6A7E] mt-1">Qeydiyyat zamanı daxil etdiyiniz e-poçt</p>
             </div>
 
             <div>
@@ -319,7 +324,7 @@ export default function QeydiyyatPage() {
                   className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D47A1]/30 focus:border-[#0D47A1] transition-all pr-12"
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#718096] hover:text-[#1A1A2E] text-sm">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A6A7E] hover:text-[#1A1A2E] text-sm">
                   {showPassword ? "Gizlə" : "Göstər"}
                 </button>
               </div>
@@ -361,7 +366,7 @@ export default function QeydiyyatPage() {
       <header className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/"><Image src="/levelup-logo.svg" alt="Level UP" width={80} height={32} className="h-8 w-auto" /></Link>
-          <div className="text-sm text-[#718096]">Addım {step}/{totalSteps}</div>
+          <div className="text-sm text-[#5A6A7E]">Addım {step}/{totalSteps}</div>
         </div>
         <div className="h-1 bg-gray-100">
           <div className="h-full bg-gradient-to-r from-[#0D47A1] to-[#2EC4B6] transition-all duration-500" style={{ width: `${(step / totalSteps) * 100}%` }} />
@@ -371,8 +376,8 @@ export default function QeydiyyatPage() {
       <main className="max-w-4xl mx-auto px-4 py-10">
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] mb-2">Qeydiyyat Forması</h1>
-          <p className="text-[#718096]">Level UP — Urban Innovation Hackathon | WUF13</p>
-          <p className="text-sm text-[#718096] mt-2">Komanda: min 3 — maks 5 nəfər</p>
+          <p className="text-[#5A6A7E]">Level UP Hakatonu</p>
+          <p className="text-sm text-[#5A6A7E] mt-2">Komanda: min 3 — maks 5 nəfər</p>
         </div>
 
         {step === 1 && (
@@ -410,9 +415,9 @@ export default function QeydiyyatPage() {
 
         {step === 3 && (
           <div className="space-y-6 animate-fade-in-up">
-            <SectionTitle step={3} title="Layihə İdeyası və Prototip Planlaması" subtitle="WUF13 kontekstinə uyğunluq nəzərə alınacaq" />
+            <SectionTitle step={3} title="Layihə İdeyası və Prototip Planlaması" subtitle="IoT və ağıllı sistem həlləri kontekstində" />
             <InputField label="Layihənizin adı" required value={form.layiheAdi} onChange={(v) => setForm({ ...form, layiheAdi: v })} />
-            <TextArea label="Hansı şəhər problemini həll etməyi hədəfləyirsiniz?" required value={form.problem} onChange={(v) => setForm({ ...form, problem: v })} maxLength={1000} hint="Maks. 1000 simvol" />
+            <TextArea label="Hansı problemi həll etməyi hədəfləyirsiniz?" required value={form.problem} onChange={(v) => setForm({ ...form, problem: v })} maxLength={1000} hint="Maks. 1000 simvol" />
             <TextArea label="Layihənizin əsas ideyası və məqsədi" required value={form.ideya} onChange={(v) => setForm({ ...form, ideya: v })} maxLength={1000} hint="Maks. 1000 simvol" />
             <TextArea label="Seçdiyiniz istiqamət daxilində hansı aspekti əhatə edir?" required value={form.trackAspekt} onChange={(v) => setForm({ ...form, trackAspekt: v })} maxLength={1000} hint="Maks. 1000 simvol" />
             <div>
@@ -427,7 +432,7 @@ export default function QeydiyyatPage() {
               </div>
             </div>
             <TextArea label="İstifadə edəcəyiniz texnologiyalar" required value={form.texnologiyalar} onChange={(v) => setForm({ ...form, texnologiyalar: v })} maxLength={1000} hint="Maks. 1000 simvol" />
-            <TextArea label="Urban mühitə müsbət təsirləri" required value={form.urbanTesir} onChange={(v) => setForm({ ...form, urbanTesir: v })} maxLength={1000} hint="Maks. 1000 simvol" />
+            <TextArea label="Ev/şəhər mühitinə müsbət təsirləri" required value={form.urbanTesir} onChange={(v) => setForm({ ...form, urbanTesir: v })} maxLength={1000} hint="Maks. 1000 simvol" />
             <TextArea label="Mövcud həllərdən fərqi" required value={form.ferq} onChange={(v) => setForm({ ...form, ferq: v })} maxLength={1000} hint="Maks. 1000 simvol" />
             <TextArea label="'Made in Azerbaijan' texnologiyalarına töhfə" value={form.madeInAz} onChange={(v) => setForm({ ...form, madeInAz: v })} />
 
@@ -455,11 +460,11 @@ export default function QeydiyyatPage() {
 
         <div className="flex items-center justify-between mt-10 pt-6 border-t border-gray-200">
           {step > 1 ? (
-            <button type="button" onClick={() => { setStep(step - 1); window.scrollTo(0, 0); }} className="flex items-center gap-2 text-[#718096] hover:text-[#1A1A2E] transition-colors px-6 py-3">
+            <button type="button" onClick={() => { setStep(step - 1); window.scrollTo(0, 0); }} className="flex items-center gap-2 text-[#5A6A7E] hover:text-[#1A1A2E] transition-colors px-6 py-3">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>Geri
             </button>
           ) : (
-            <Link href="/" className="text-[#718096] hover:text-[#1A1A2E] transition-colors px-6 py-3">Ana səhifə</Link>
+            <Link href="/" className="text-[#5A6A7E] hover:text-[#1A1A2E] transition-colors px-6 py-3">Ana səhifə</Link>
           )}
           {step < totalSteps ? (
             <button type="button" onClick={() => { setStep(step + 1); window.scrollTo(0, 0); }} className="bg-[#0D47A1] hover:bg-[#1565C0] text-white font-semibold px-8 py-3 rounded-xl transition-all flex items-center gap-2">

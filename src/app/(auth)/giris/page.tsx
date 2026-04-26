@@ -108,8 +108,8 @@ export default function GirisPage() {
         <CardTitle className="text-2xl font-bold text-[#1A1A2E]">
           Daxil ol
         </CardTitle>
-        <CardDescription className="text-[#718096]">
-          Level UP Hackathon platformasına xoş gəldiniz
+        <CardDescription className="text-[#5A6A7E]">
+          Level UP Hakatonu platformasına xoş gəldiniz
         </CardDescription>
       </CardHeader>
 
